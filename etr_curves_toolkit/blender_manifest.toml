@@ -1,0 +1,33 @@
+schema_version = "1.0.0"
+
+id = "etr_curves_toolkit"
+version = "0.12.0"
+name = "Curve Toolkit"
+tagline = "Tools to refine and operate on Poly, Bezier and NURBS curves"
+maintainer = "Cristobal Vila <etereaestudios@gmail.com>"
+type = "add-on"
+
+website = "https://www.etereaestudios.com"
+
+tags = [
+    "3D View",
+    "Add Curve",
+    "Object",
+]
+
+blender_version_min = "5.2.0"
+
+license = [
+    "SPDX:GPL-3.0-or-later",
+]
+
+copyright = [
+    "2026 Cristobal Vila (etereaestudios.com)",
+]
+
+[build]
+paths_exclude_pattern = [
+    "__pycache__/",
+    ".*",
+    "*.zip",
+]
