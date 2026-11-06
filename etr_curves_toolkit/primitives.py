@@ -2,11 +2,13 @@
 # Copyright (C) 2026 Cristobal Vila (etereaestudios.com)
 
 """
-Curve Toolkit - Primitive Curves
+Curve Toolkit - Primitive Curves (first row of Create Curves)
 
 Five icon buttons that add a simple curve to the scene:
 
-  - Line        a straight Poly curve along the X axis, from -Radius to +Radius.
+  - Line / Point a straight Poly curve along the X axis, from -Radius to
+                +Radius, with Points evenly spaced control points (2 by
+                default; 1 makes a single stray point at the center).
   - Bezier      the same two-point Bezier curve that Blender's Add > Curve >
                 Bezier makes (same shape, same Aligned handles).
   - Rectangle   a closed Poly rectangle on the XY plane (Width x Height).
@@ -254,18 +256,35 @@ def _radius_property(description):
 # -----------------------------------------------------------------------------
 
 class ETR_OT_curve_toolkit_add_line(AddCurvePrimitive, bpy.types.Operator):
-    """Add a straight line on the X axis, as a Poly curve with two points, from -Radius to +Radius. In the Edit Mode of a curve, as one more spline inside it"""
+    """Add a straight line on the X axis, as a Poly curve, from -Radius to +Radius (Points 1: a single stray point). In the Edit Mode of a curve, as one more spline inside it"""
     bl_idname = "etr.curve_toolkit_add_line"
-    bl_label = "Add Line"
+    bl_label = "Add Line / Point"
 
+    points: IntProperty(
+        name="Points",
+        description="Control points of the line, evenly spaced: 2 is a plain line, 3 or "
+                    "more subdivide it, and 1 is a single stray point (a Poly spline of "
+                    "one point) at the center",
+        default=2,
+        min=1,
+        soft_max=99,
+        max=10000,
+    )
     radius: _radius_property("Half the length of the line")
 
     unit_properties = ("radius",)
-    curve_name = "Line"
+    size_properties = ("points", "radius")
+
+    @property
+    def curve_name(self):
+        return "Point" if self.points == 1 else "Line"
 
     def build(self):
+        n = self.points
+        if n == 1:
+            return _poly([(0.0, 0.0, 0.0)], False)
         r = self.radius
-        return _poly([(-r, 0.0, 0.0), (r, 0.0, 0.0)], False)
+        return _poly([(-r + 2.0 * r * i / (n - 1), 0.0, 0.0) for i in range(n)], False)
 
 
 # -----------------------------------------------------------------------------
@@ -327,7 +346,7 @@ class ETR_OT_curve_toolkit_add_rectangle(AddCurvePrimitive, bpy.types.Operator):
 # -----------------------------------------------------------------------------
 
 class ETR_OT_curve_toolkit_add_polygon(AddCurvePrimitive, bpy.types.Operator):
-    """Add a closed regular polygon on the XY plane, as a Poly curve. The first point is on the +Y axis (at 12 o'clock) and stays there when the number of sides changes. In the Edit Mode of a curve, as one more spline inside it"""
+    """Add a closed regular polygon on the XY plane, as a Poly curve. In the Edit Mode of a curve, as one more spline inside it"""
     bl_idname = "etr.curve_toolkit_add_polygon"
     bl_label = "Add Polygon"
 

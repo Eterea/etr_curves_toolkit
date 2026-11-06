@@ -6,7 +6,9 @@ Curve Toolkit - Curve Booleans and Curve Splits (Object Mode)
 
 Curve Booleans (Union, Intersection, Difference)
     2D boolean operations between closed curve objects: each selected object
-    must be a 2D curve with a single closed Poly or Bezier spline. The result
+    must be a 2D curve whose splines are all closed Poly or Bezier ones. An
+    object with several splines (a shape with holes, or several islands) is
+    one region, even-odd, the way Blender fills it. The result
     is a new object, "Curve Boolean", with the look of the active object; the
     originals are hidden, never modified.
       - Union: any number of curves.
@@ -20,7 +22,10 @@ Curve Splits (Split Active, Split All)
     Bezier splines, in 2D curve objects. Every piece becomes a new object
     (Split_01, Split_02...) and all the selected originals are hidden.
       - Split Active: only the active curve is cut (by all the others).
-      - Split All: every selected curve is cut by all the others.
+      - Split All: every selected curve is cut by all the others, and every
+        spline also where it crosses itself (a loop) or another spline of the
+        same curve, so a single looping curve can be split on its own. It
+        needs no active object (a Select All or a box selection leaves none).
 
 The curves may be anywhere in space and rotated, as long as they all lie in
 the same plane: they are brought into the local space of the active object
@@ -175,12 +180,21 @@ def _outer_handle(orig, inner_meta, co, inner_seg):
 # Validation
 # -----------------------------------------------------------------------------
 
-def _validate(context, title, min_count, max_count, closed_single):
-    """Selected curve objects and active object, or raise Fail."""
+def _validate(context, title, min_count, max_count, closed_only, need_active=True):
+    """Selected curve objects and active object, or raise Fail.
+
+    With need_active=False the selection may have no active object (after a
+    Select All or a box selection): the first selected curve stands in for it,
+    as the reference space.
+    """
     objs = selected_curves(context)
+    if not objs:
+        raise Fail(f"{title} needs at least {min_count} curve object(s) selected")
     active = context.active_object
     if active not in objs:
-        raise Fail(f"{title}: the active object must be one of the selected curves")
+        if need_active:
+            raise Fail(f"{title}: the active object must be one of the selected curves")
+        active = objs[0]
     if len(objs) < min_count:
         raise Fail(f"{title} needs at least {min_count} curve objects selected")
     if max_count and len(objs) > max_count:
@@ -198,8 +212,9 @@ def _validate(context, title, min_count, max_count, closed_single):
                 raise Fail(f"'{obj.name}' has {s.type} splines: {title} works only with Poly and Bezier curves")
             if len(s.bezier_points if s.type == 'BEZIER' else s.points) < 2:
                 raise Fail(f"'{obj.name}' has a spline with a single point")
-        if closed_single and (len(splines) != 1 or not splines[0].use_cyclic_u):
-            raise Fail(f"'{obj.name}' must have a single closed (Cyclic) spline")
+        if closed_only and not all(s.use_cyclic_u for s in splines):
+            raise Fail(f"'{obj.name}' has open splines: {title} works only with closed "
+                       "(Cyclic) splines")
     return objs, active
 
 
@@ -310,13 +325,16 @@ class ETR_OT_curve_toolkit_boolean(bpy.types.Operator):
     def execute(self, context):
         title, min_n, max_n, _ = _BOOLEAN_INFO[self.operation]
         try:
-            objs, active = _validate(context, title, min_n, max_n, closed_single=True)
+            objs, active = _validate(context, title, min_n, max_n, closed_only=True)
             per_obj, tol = _to_active_space(objs, active)
         except Fail as exc:
             self.report({'ERROR'}, str(exc))
             return {'CANCELLED'}
 
-        region = {o: [per_obj[o][0][1]] for o in objs}
+        # Every spline of an object is one loop of its region: a curve with
+        # holes (two nested splines) or with several islands counts as one
+        # shape, even-odd, the way Blender fills it.
+        region = {o: [segs for _, segs in per_obj[o]] for o in objs}
         others = [o for o in objs if o is not active]
         if self.operation == 'UNION':
             loops = eng.union_all([region[active]] + [region[o] for o in others], tol)
@@ -329,7 +347,7 @@ class ETR_OT_curve_toolkit_boolean(bpy.types.Operator):
             self.report({'ERROR'}, f"{title}: the result is empty (do the curves overlap?)")
             return {'CANCELLED'}
 
-        all_poly = all(per_obj[o][0][0].kind == 'POLY' for o in objs)
+        all_poly = all(d.kind == 'POLY' for o in objs for d, _ in per_obj[o])
         kind = 'POLY' if all_poly else 'BEZIER'
         settings = dict(per_obj[active][0][0].settings)
         datas = [segments_to_spline(loop, True, kind, settings) for loop in loops]
@@ -352,57 +370,47 @@ _SPLIT_INFO = {
                "Bezier curves, open or closed, in the same plane (flat 3D curves are "
                "converted to 2D)"),
     'ALL': ("Split All",
-            "Cut every selected curve where it crosses the others. Every piece becomes a new "
-            "object and all the selected originals are hidden. Poly or Bezier curves, open "
-            "or closed, in the same plane (flat 3D curves are converted to 2D)"),
+            "Cut every selected curve where it crosses the others and where it crosses "
+            "itself (a loop), so a single curve can be split too. Every piece becomes a new "
+            "object and the originals are hidden. No active object needed. Poly or Bezier, "
+            "in the same plane"),
 }
 
 
-class ETR_OT_curve_toolkit_split(bpy.types.Operator):
-    """Cut 2D curves where they cross each other"""
-    bl_idname = "etr.curve_toolkit_split"
-    bl_label = "Curve Split"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    mode: EnumProperty(
-        name="Mode",
-        items=(
-            ('ACTIVE', "Split Active", ""),
-            ('ALL', "Split All", ""),
-        ),
-        default='ACTIVE',
-    )
-
-    @classmethod
-    def description(cls, context, properties):
-        return _SPLIT_INFO[properties.mode][1]
-
-    @classmethod
-    def poll(cls, context):
-        return context.mode == 'OBJECT' and len(selected_curves(context)) >= 2
+class _SplitBase:
+    """The work of both split operators; `mode` is a property of each."""
 
     def execute(self, context):
+        split_all = self.mode == 'ALL'
         title = _SPLIT_INFO[self.mode][0]
         try:
-            objs, active = _validate(context, title, 2, 0, closed_single=False)
+            if split_all:
+                objs, active = _validate(context, title, 1, 0, closed_only=False,
+                                         need_active=False)
+            else:
+                objs, active = _validate(context, title, 2, 0, closed_only=False)
             per_obj, tol = _to_active_space(objs, active)
         except Fail as exc:
             self.report({'ERROR'}, str(exc))
             return {'CANCELLED'}
 
-        # One engine path per spline; the owner is the object, so splines of
-        # the same object do not cut each other.
+        # One engine path per spline. Split Active: the owner is the object,
+        # so splines of the same object do not cut each other. Split All:
+        # every spline is its own owner and is also cut where it crosses
+        # itself, so everything is cut by everything.
         paths, sources = [], []
         for obj in objs:
             for d, segs in per_obj[obj]:
-                paths.append(eng.Path(segs, d.cyclic, obj.name))
+                owner = len(paths) if split_all else obj.name
+                paths.append(eng.Path(segs, d.cyclic, owner))
                 sources.append((obj, d))
         targets = [i for i, (obj, _) in enumerate(sources)
-                   if self.mode == 'ALL' or obj is active]
-        intervals = eng.split_intervals(paths, targets, tol)
+                   if split_all or obj is active]
+        intervals = eng.split_intervals(paths, targets, tol, self_cuts=split_all)
 
         if all(intervals[i] is None for i in targets):
-            self.report({'WARNING'}, f"{title}: the curves do not cross each other")
+            self.report({'WARNING'}, f"{title}: the curves do not cross each other"
+                        + (" nor themselves" if split_all else ""))
             return {'CANCELLED'}
 
         pieces = []   # (source object, SplineData)
@@ -428,9 +436,59 @@ class ETR_OT_curve_toolkit_split(bpy.types.Operator):
 
 # -----------------------------------------------------------------------------
 
+class ETR_OT_curve_toolkit_split(_SplitBase, bpy.types.Operator):
+    """Cut 2D curves where they cross each other"""
+    bl_idname = "etr.curve_toolkit_split"
+    bl_label = "Curve Split"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    mode: EnumProperty(
+        name="Mode",
+        items=(
+            ('ACTIVE', "Split Active", ""),
+            ('ALL', "Split All", ""),
+        ),
+        default='ACTIVE',
+    )
+
+    @classmethod
+    def description(cls, context, properties):
+        return _SPLIT_INFO[properties.mode][1]
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT' and len(selected_curves(context)) >= 2
+
+
+class ETR_OT_curve_toolkit_split_all(_SplitBase, bpy.types.Operator):
+    """Cut every selected curve where it crosses the others and where it crosses itself (a loop), so a single curve can be split too. No active object needed. Poly or Bezier, in the same plane"""
+    bl_idname = "etr.curve_toolkit_split_all"
+    bl_label = "Split All"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    # The button of the panel. Same operator as Curve Split with Mode = All,
+    # with a poll of its own: one curve is enough, since a loop can split
+    # itself (Split Active still needs two).
+    mode: EnumProperty(
+        name="Mode",
+        items=(('ALL', "Split All", ""),),
+        default='ALL',
+        options={'HIDDEN'},
+    )
+
+    @classmethod
+    def description(cls, context, properties):
+        return _SPLIT_INFO['ALL'][1]
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT' and len(selected_curves(context)) >= 1
+
+
 classes = (
     ETR_OT_curve_toolkit_boolean,
     ETR_OT_curve_toolkit_split,
+    ETR_OT_curve_toolkit_split_all,
 )
 
 

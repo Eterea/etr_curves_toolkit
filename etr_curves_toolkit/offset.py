@@ -20,6 +20,15 @@ left selected. One spline can give more than one, where Clean Overlaps cuts it
 in two, and the object is never converted from 3D to 2D: the selected splines
 simply have to be flat in the local XY plane.
 
+Duplicate (on by default) is what both modes above describe. Turned off, the
+original is replaced by its offset instead: the curve object itself in Object
+Mode, the selected splines in Edit Mode.
+
+Handles: the end points of an open offset get an outer handle in line with
+the inner one, and every smooth point (the two handles in line) that would
+have Free handles gets Aligned ones instead, the joints of the half circles
+of Join Both with Arcs included (see tidy_handles).
+
 Both Sides gives two parallels at once, one on each side, and then the sign of
 the Distance means nothing. With Join Both with Arcs on top of it, the two
 parallels of an *open* spline are closed at each end by a half circle of radius
@@ -81,6 +90,95 @@ def _local_distance(obj, distance):
     return distance / scale, abs(sx - sy) > 1e-4 * max(sx, sy)
 
 
+def _unit(v):
+    n = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) ** 0.5
+    return (v[0] / n, v[1] / n, v[2] / n) if n > 1e-12 else None
+
+
+def _sub(a, b):
+    return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
+
+
+def _length(v):
+    return (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) ** 0.5
+
+
+def _align_end(point, outer_side, original_length):
+    """Outer handle of an open end, in line with the inner one.
+
+    The engine has no outer handle to give an end point of an open offset (it
+    used to point at the outer handle of the original, the same spot for every
+    parallel). It is laid in line with the inner handle, on the other side,
+    with the length of the outer handle of the original end when there is one,
+    or the length of the inner handle; both become Aligned (a Vector inner
+    handle stays Vector, and Blender aligns the outer one with it).
+    """
+    inner = point.hr if outer_side == 'L' else point.hl
+    inner_type = point.hrt if outer_side == 'L' else point.hlt
+    if inner is None:
+        return
+    direction = _unit(_sub(inner, point.co))
+    if direction is None:
+        return
+    length = original_length or _length(_sub(inner, point.co))
+    outer = tuple(c - d * length for c, d in zip(point.co, direction))
+    if inner_type == 'FREE':
+        inner_type = 'ALIGNED'
+    if outer_side == 'L':
+        point.hl, point.hlt, point.hrt = outer, 'ALIGNED', inner_type
+    else:
+        point.hr, point.hrt, point.hlt = outer, 'ALIGNED', inner_type
+
+
+def _align_smooth_points(data):
+    """Free handles of a point where the curve runs smooth (the two handles in
+    line, on opposite sides) become Aligned, so moving one keeps the joint
+    smooth: the points the engine adds, and the joints of the half circles of
+    Join Both with Arcs. Vector handles stay Vector."""
+    for p in data.points:
+        if p.hl is None or p.hr is None:
+            continue
+        a, b = _unit(_sub(p.hl, p.co)), _unit(_sub(p.hr, p.co))
+        if a is None or b is None:
+            continue
+        if a[0] * b[0] + a[1] * b[1] + a[2] * b[2] > -1.0 + 1e-6:
+            continue
+        if p.hlt == 'FREE':
+            p.hlt = 'ALIGNED'
+        if p.hrt == 'FREE':
+            p.hrt = 'ALIGNED'
+
+
+def tidy_handles(datas, original, distance):
+    """Handle types of the Bezier splines of an offset (see _align_end and
+    _align_smooth_points). `original` is the spline they come from and
+    `distance` the (positive) distance of the offset."""
+    ends = []
+    if original.kind == 'BEZIER' and not original.cyclic and original.points:
+        first, last = original.points[0], original.points[-1]
+        ends = [(first.co, _length(_sub(first.hl, first.co))),
+                (last.co, _length(_sub(last.hr, last.co)))]
+
+    def original_length(co):
+        # The end of the offset that lies at the Distance from an end of the
+        # original is the offset of that end, and takes the length of its
+        # outer handle; an end made by a cut takes the inner one.
+        for end, length in ends:
+            if abs(_length(_sub(co, end)) - distance) <= 1e-4 * max(distance, 1e-6):
+                return length if length > 1e-9 else None
+        return None
+
+    for data in datas:
+        if data.kind != 'BEZIER' or not data.points:
+            continue
+        if not data.cyclic:
+            first, last = data.points[0], data.points[-1]
+            _align_end(first, 'L', original_length(first.co))
+            _align_end(last, 'R', original_length(last.co))
+        _align_smooth_points(data)
+    return datas
+
+
 def _select_all(data, state=True):
     """Set the selection flags of every point of a snapshot."""
     for p in data.points:
@@ -104,7 +202,7 @@ def _flat_in_xy(data):
 
 
 class ETR_OT_curve_toolkit_offset(bpy.types.Operator):
-    """Create a curve parallel to every selected 2D curve, at the given Distance: outwards (positive) or inwards (negative) on closed curves, to one side or the other on open ones. Both Sides gives one parallel on each side, and Join Both with Arcs then closes the two of an open curve with a half circle at each end. Bezier curves stay Bezier. In Object Mode the offset is a new object; in Edit Mode it is a new spline inside the same curve (a partly selected spline is taken whole). The originals are never modified. Poly and Bezier only (not NURBS)"""
+    """Create a curve parallel to every selected 2D curve, at the given Distance (outwards or inwards on closed curves, to one side on open ones). Both Sides and Join Both with Arcs are available. Poly and Bezier only"""
     bl_idname = "etr.curve_toolkit_offset"
     bl_label = "Offset"
     bl_options = {'REGISTER', 'UNDO'}
@@ -152,6 +250,15 @@ class ETR_OT_curve_toolkit_offset(bpy.types.Operator):
         ),
         default=True,
     )
+    duplicate: BoolProperty(
+        name="Duplicate",
+        description=(
+            "Keep the original and add the offset: as a new object in Object Mode, "
+            "as new splines of the same curve in Edit Mode. Off: the original is "
+            "replaced by its offset"
+        ),
+        default=True,
+    )
     both_sides: BoolProperty(
         name="Both Sides",
         description=(
@@ -186,6 +293,7 @@ class ETR_OT_curve_toolkit_offset(bpy.types.Operator):
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
+        layout.prop(self, "duplicate")
         layout.prop(self, "distance")
         layout.prop(self, "corners")
         row = layout.row()
@@ -222,7 +330,7 @@ class ETR_OT_curve_toolkit_offset(bpy.types.Operator):
 
     # -- work ----------------------------------------------------------------
 
-    def _to_splines(self, data, paths):
+    def _to_splines(self, data, paths, distance):
         """Spline snapshots of the paths the engine gave back.
 
         A Poly spline stays Poly while the offset is made of straight segments
@@ -234,7 +342,7 @@ class ETR_OT_curve_toolkit_offset(bpy.types.Operator):
             poly = data.kind == 'POLY' and all(s.line for s in path)
             out.append(segments_to_spline(
                 path, closed, 'POLY' if poly else 'BEZIER', data.settings))
-        return out
+        return tidy_handles(out, data, abs(distance))
 
     def _paths(self, segs, cyclic, distance, tol):
         return off.offset_path(
@@ -258,7 +366,8 @@ class ETR_OT_curve_toolkit_offset(bpy.types.Operator):
         tol = eng.tolerances_for(eng.segs_points(segs))
 
         if not self.both_sides:
-            return self._to_splines(data, self._paths(segs, data.cyclic, distance, tol)), False
+            return self._to_splines(
+                data, self._paths(segs, data.cyclic, distance, tol), distance), False
 
         # With Both Sides the sign means nothing: there is one parallel on each
         # side of the curve, whichever way it turns.
@@ -269,12 +378,12 @@ class ETR_OT_curve_toolkit_offset(bpy.types.Operator):
         if self.join_arcs and not data.cyclic:
             loop = off.close_both_sides(segs, plus, minus, width, tol)
             if loop is not None:
-                return self._to_splines(data, [(loop, True)]), False
+                return self._to_splines(data, [(loop, True)], width), False
             # The cleaning pass cut an offset in pieces or ate an end away, so
             # there is nothing left for the half-turns to close onto.
-            return self._to_splines(data, plus + minus), True
+            return self._to_splines(data, plus + minus, width), True
 
-        return self._to_splines(data, plus + minus), False
+        return self._to_splines(data, plus + minus, width), False
 
     def _offset_curve(self, obj):
         """Spline snapshots of the offset of one whole curve object."""
@@ -309,10 +418,17 @@ class ETR_OT_curve_toolkit_offset(bpy.types.Operator):
             unjoined += missed
             if non_uniform:
                 stretched.append(obj.name)
-            if datas:
+            if not datas:
+                empty.append(obj.name)
+            elif self.duplicate:
                 created.append((new_curve_object(context, obj, datas, OFFSET_NAME), obj))
             else:
-                empty.append(obj.name)
+                # In place: the curve itself becomes its offset. Curve data
+                # shared with other objects is made single user first.
+                if obj.data.users > 1:
+                    obj.data = obj.data.copy()
+                sd.replace_splines(obj.data, datas)
+                created.append((obj, obj))
 
         if not created:
             self.report(
@@ -321,7 +437,8 @@ class ETR_OT_curve_toolkit_offset(bpy.types.Operator):
             return {'CANCELLED'}
 
         for new_obj, source in created:
-            link_like(new_obj, source, context)
+            if new_obj is not source:
+                link_like(new_obj, source, context)
         for obj in context.selected_objects:
             obj.select_set(False)
         last = None
@@ -344,7 +461,8 @@ class ETR_OT_curve_toolkit_offset(bpy.types.Operator):
                 f"non-uniform scale in {', '.join(stretched)}: the distance cannot be exact")
         if unjoined:
             notes.append(_UNJOINED % unjoined)
-        message = f"Created {len(created)} offset curve(s)"
+        message = (f"Created {len(created)} offset curve(s)" if self.duplicate
+                   else f"Offset {len(created)} curve(s) in place")
         if notes:
             message += " (" + "; ".join(notes) + ")"
         self.report({'WARNING'} if (empty or stretched or unjoined) else {'INFO'}, message)
@@ -405,9 +523,11 @@ class ETR_OT_curve_toolkit_offset(bpy.types.Operator):
                 result.append(data)
                 lost += 1
                 continue
-            # The original stays where it is, and the offset goes in right
-            # after it. Only the offset is left selected.
-            result.append(_select_all(data, False))
+            # With Duplicate, the original stays where it is and the offset
+            # goes in right after it; without it, the offset takes its place.
+            # Only the offset is left selected.
+            if self.duplicate:
+                result.append(_select_all(data, False))
             result += [_select_all(p) for p in pieces]
             done += 1
         if done:

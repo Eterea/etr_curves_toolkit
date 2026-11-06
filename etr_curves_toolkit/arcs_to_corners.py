@@ -204,7 +204,7 @@ def _has_selected_pair(data):
 # -----------------------------------------------------------------------------
 
 class ETR_OT_curve_toolkit_arcs_to_corners(bpy.types.Operator):
-    """Bring back the hard corner a curved segment was rounded from: for every pair of consecutive selected control points, the two handles of the segment between them are prolonged until they meet and a new control point with Vector handles is placed there, so both sides of the corner are straight. A segment whose handles do not meet in front of both points (a straight one, a half turn, an S shape, or handles not in the same plane in 3D) is left alone. The two original points stay selected and the corner does not, so a Dissolve afterwards leaves only the corner. Bezier splines"""
+    """Bring back the hard corner a curved segment was rounded from, for every selected pair of consecutive points. The two original points stay selected, so a Dissolve afterwards leaves only the corner. Bezier only"""
     bl_idname = "etr.curve_toolkit_arcs_to_corners"
     bl_label = "Arcs to Corners"
     bl_options = {'REGISTER', 'UNDO'}

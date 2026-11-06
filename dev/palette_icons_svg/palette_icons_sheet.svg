@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTo5MzAxOTdhYS1jMTVkLTQ4MjYtOThjZi05OWYxYjk1OTlkODQAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaD6H9wKr+KtNmuutTooPhhIAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDphNzhjNGY2MS0wYjk1LTRjZmItODFmNi0xYzU0MDAzNzI5Y2NscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoa3o1yjAiR3r0P+Hf5M+CmQAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggxg1qN0C5fuiQd6GWZ6kGxo1RrP2o54jmn+nCD6pdkq2kZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaDVk7WmctUEXkrxKU6yn+PwAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCC1ERQP9TPNJgYCpwYNJbUFSyU4x+nRTVVYR66WgVRNGWRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBi9Zmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjkzMDE5N2FhLWMxNWQtNDgyNi05OGNmLTk5ZjFiOTU5OWQ4NC9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjVkYWE1N2U5LWNmNzQtNGYzZS1iZDY3LWU5ZTIyMDE5ZDZlMnJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCDGDWo3QLl+6JB3oZZnqQbGjVGs/ajniOaf6cIPql2SraJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggI2bvRWAQqHjiYTpOHguWQzNQCUP5TxgcGAvzTsVD6bKiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggYiKsyraMCCGNm8bzotyijIXc8vQvlSUGCANaXkKW6RJ0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQJfQyyomdCbAdlP/gcVhVP/bgmngBK81cakOUGwhxQn/vfS0qi0jFq3l9/C3XnyiE5gbhxtsNk9z1i7li0k9RrI=</c2pa:manifest></metadata>
+  <defs>
+    <clipPath id="union_clip1"><circle cx="19.533" cy="19.533" r="8.538" fill="#000000"/></clipPath>
+    <clipPath id="union_clip2"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M10.995 19.533A8.538 8.538 0 1 0 28.07 19.533A8.538 8.538 0 1 0 10.995 19.533Z"/></clipPath>
+    <clipPath id="union_clip3"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M3.635 3.635V19.827H19.827V3.635Z"/></clipPath>
+    <clipPath id="intersection_clip1"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M10.995 19.533A8.538 8.538 0 1 0 28.07 19.533A8.538 8.538 0 1 0 10.995 19.533Z"/></clipPath>
+    <clipPath id="intersection_clip2"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M3.635 3.635V19.827H19.827V3.635Z"/></clipPath>
+    <clipPath id="intersection_clip3"><circle cx="19.533" cy="19.533" r="8.538" fill="#000000"/></clipPath>
+    <clipPath id="intersection_clip4"><rect x="3.635" y="3.635" width="16.192" height="16.192" fill="#000000"/></clipPath>
+    <clipPath id="difference_clip1"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M3.635 3.635V19.827H19.827V3.635Z"/></clipPath>
+    <clipPath id="difference_clip2"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M10.995 19.533A8.538 8.538 0 1 0 28.07 19.533A8.538 8.538 0 1 0 10.995 19.533Z"/></clipPath>
+    <clipPath id="difference_clip3"><circle cx="19.533" cy="19.533" r="8.538" fill="#000000"/></clipPath>
+    <clipPath id="difference_clip4"><rect x="3.635" y="3.635" width="16.192" height="16.192" fill="#000000"/></clipPath>
+    <clipPath id="split_active_clip1"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M17.619 11A2.208 2.208 0 1 0 22.035 11A2.208 2.208 0 1 0 17.619 11Z"/></clipPath>
+    <clipPath id="split_active_clip2"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M8.792 19.827A2.208 2.208 0 1 0 13.208 19.827A2.208 2.208 0 1 0 8.792 19.827Z"/></clipPath>
+    <clipPath id="split_all_clip1"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M17.619 11A2.208 2.208 0 1 0 22.035 11A2.208 2.208 0 1 0 17.619 11Z"/></clipPath>
+    <clipPath id="split_all_clip2"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M8.792 19.827A2.208 2.208 0 1 0 13.208 19.827A2.208 2.208 0 1 0 8.792 19.827Z"/></clipPath>
+    <clipPath id="round_clip1"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M10.112 1.28V30.72H21.888V1.28Z"/></clipPath>
+    <clipPath id="round_clip2"><path clip-rule="evenodd" d="M-1 -1H33V33H-1Z M1.28 10.112V21.888H30.72V10.112Z"/></clipPath>
+  </defs>
+  <g id="line" transform="translate(0 0)">
+    <path d="M4.813 4.813 L27.187 27.187" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4.813 20.269 L11.437 27.04" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="4.813" cy="4.813" r="3.032" fill="#ffffff"/>
+    <circle cx="16" cy="16" r="3.032" fill="#ffffff"/>
+    <circle cx="27.187" cy="27.187" r="3.032" fill="#ffffff"/>
+    <circle cx="4.813" cy="20.269" r="3.032" fill="#ffffff"/>
+    <circle cx="11.437" cy="27.04" r="3.032" fill="#ffffff"/>
+    <circle cx="24.243" cy="8.051" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="bezier" transform="translate(32 0)">
+    <path d="M4.813 5.99 C13.645 1.869 20.71 18.355 27.187 27.187" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="4.813" cy="5.99" r="3.032" fill="#ffffff"/>
+    <circle cx="27.187" cy="27.187" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="rectangle" transform="translate(64 0)">
+    <path d="M4.813 4.813 L27.187 4.813 L27.187 27.187 L4.813 27.187 Z" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="4.813" cy="4.813" r="3.032" fill="#ffffff"/>
+    <circle cx="27.187" cy="4.813" r="3.032" fill="#ffffff"/>
+    <circle cx="27.187" cy="27.187" r="3.032" fill="#ffffff"/>
+    <circle cx="4.813" cy="27.187" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="polygon" transform="translate(96 0)">
+    <path d="M16 4.224 L5.802 10.112 L5.802 21.888 L16 27.776 L26.198 21.888 L26.198 10.112 Z" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16" cy="4.224" r="3.032" fill="#ffffff"/>
+    <circle cx="5.802" cy="10.112" r="3.032" fill="#ffffff"/>
+    <circle cx="5.802" cy="21.888" r="3.032" fill="#ffffff"/>
+    <circle cx="16" cy="27.776" r="3.032" fill="#ffffff"/>
+    <circle cx="26.198" cy="21.888" r="3.032" fill="#ffffff"/>
+    <circle cx="26.198" cy="10.112" r="3.032" fill="#ffffff"/>
+    <circle cx="16" cy="16" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="circle" transform="translate(128 0)">
+    <circle cx="16" cy="16" r="10.495" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16" cy="4.224" r="3.032" fill="#ffffff"/>
+    <circle cx="4.224" cy="16" r="3.032" fill="#ffffff"/>
+    <circle cx="16" cy="27.776" r="3.032" fill="#ffffff"/>
+    <circle cx="27.776" cy="16" r="3.032" fill="#ffffff"/>
+    <circle cx="16" cy="16" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="circle_center_point" transform="translate(160 0)">
+    <circle cx="16" cy="16" r="10.495" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16" cy="4.224" r="3.032" fill="#ffffff"/>
+    <circle cx="16" cy="16" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="circle_2_points" transform="translate(0 32)">
+    <circle cx="16" cy="16" r="10.495" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16" cy="4.224" r="3.032" fill="#ffffff"/>
+    <circle cx="16" cy="27.776" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="circle_3_points" transform="translate(32 32)">
+    <circle cx="16" cy="16" r="10.495" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16" cy="4.224" r="3.032" fill="#ffffff"/>
+    <circle cx="27.56" cy="18.247" r="3.032" fill="#ffffff"/>
+    <circle cx="6.013" cy="22.24" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="circle_inscribed" transform="translate(64 32)">
+    <circle cx="18.2" cy="15.012" r="3.201" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4.224 15.411 L23.066 4.224 L27.482 27.482 Z" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="4.224" cy="15.411" r="3.032" fill="#ffffff"/>
+    <circle cx="23.066" cy="4.224" r="3.032" fill="#ffffff"/>
+    <circle cx="27.482" cy="27.482" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="circle_tangent_2" transform="translate(96 32)">
+    <circle cx="16.138" cy="19.584" r="6.079" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4.224 15.411 L23.066 4.224 L27.482 27.482" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="4.224" cy="15.411" r="3.032" fill="#ffffff"/>
+    <circle cx="23.066" cy="4.224" r="3.032" fill="#ffffff"/>
+    <circle cx="27.482" cy="27.482" r="3.032" fill="#ffffff"/>
+    <circle cx="16.138" cy="19.584" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="circle_segment_center" transform="translate(128 32)">
+    <circle cx="16" cy="17.766" r="9.318" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4.224 7.168 L27.776 7.168" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="4.224" cy="7.168" r="3.032" fill="#ffffff"/>
+    <circle cx="27.776" cy="7.168" r="3.032" fill="#ffffff"/>
+    <circle cx="16" cy="17.766" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="tangents_2_circles" transform="translate(160 32)">
+    <circle cx="10.554" cy="10.406" r="7.802" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="22.918" cy="24.538" r="4.71" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M5.608 16.44 L19.932 28.181" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="5.608" cy="16.44" r="3.032" fill="#ffffff"/>
+    <circle cx="19.932" cy="28.181" r="3.032" fill="#ffffff"/>
+    <path d="M17.191 6.306 L26.926 22.062" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="17.191" cy="6.306" r="3.032" fill="#ffffff"/>
+    <circle cx="26.926" cy="22.062" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="tangents_from_point" transform="translate(0 64)">
+    <circle cx="13.645" cy="12.614" r="9.126" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M26.893 27.187 L10.505 21.184" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M26.893 27.187 L22.474 10.304" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="10.505" cy="21.184" r="3.032" fill="#ffffff"/>
+    <circle cx="22.474" cy="10.304" r="3.032" fill="#ffffff"/>
+    <circle cx="26.893" cy="27.187" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="perpendicular" transform="translate(32 64)">
+    <path d="M4.224 28.365 C12.467 28.659 12.173 -1.958 27.482 3.635" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M23.962 15.884 L4.85 6.717" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="14.406" cy="11.301" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="lines_from_points" transform="translate(64 64)">
+    <path d="M4.224 7.757 L23.066 4.224 L27.776 26.598 L10.112 22.477 Z" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="4.224" cy="7.757" r="3.032" fill="#ffffff"/>
+    <circle cx="23.066" cy="4.224" r="3.032" fill="#ffffff"/>
+    <circle cx="27.776" cy="26.598" r="3.032" fill="#ffffff"/>
+    <circle cx="10.112" cy="22.477" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="points_in_between" transform="translate(96 64)">
+    <circle cx="4.813" cy="4.813" r="3.032" fill="#808080"/>
+    <circle cx="27.187" cy="27.187" r="3.032" fill="#808080"/>
+    <circle cx="10.406" cy="10.406" r="3.032" fill="#ffffff"/>
+    <circle cx="16" cy="16" r="3.032" fill="#ffffff"/>
+    <circle cx="21.594" cy="21.594" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="points_along_curve" transform="translate(128 64)">
+    <path d="M5.696 6.579 C25.715 -3.872 35.43 22.182 14.528 28.954" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16.908" cy="4.335" r="3.032" fill="#ffffff"/>
+    <circle cx="25.489" cy="11.395" r="3.032" fill="#ffffff"/>
+    <circle cx="23.956" cy="22.479" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="points_at_intersections" transform="translate(160 64)">
+    <path d="M6.285 4.224 L28.365 26.893" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M3.635 15.117 L22.771 7.757" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M15.706 27.776 L28.07 13.056" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="13.281" cy="11.407" r="3.032" fill="#ffffff"/>
+    <circle cx="21.966" cy="20.323" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="union" transform="translate(0 96)">
+    <rect x="3.635" y="3.635" width="16.192" height="16.192" fill="#656565"/>
+    <circle cx="19.533" cy="19.533" r="8.538" fill="#656565"/>
+    <g clip-path="url(#union_clip1)"><rect x="4.916" y="4.916" width="13.631" height="13.631" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="miter"/></g>
+    <g clip-path="url(#union_clip2)"><rect x="4.916" y="4.916" width="13.631" height="13.631" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="miter"/></g>
+    <g clip-path="url(#union_clip3)"><circle cx="19.533" cy="19.533" r="7.257" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/></g>
+  </g>
+  <g id="intersection" transform="translate(32 96)">
+    <g clip-path="url(#intersection_clip1)"><rect x="4.916" y="4.916" width="13.631" height="13.631" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="miter"/></g>
+    <g clip-path="url(#intersection_clip2)"><circle cx="19.533" cy="19.533" r="7.257" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g clip-path="url(#intersection_clip3)"><rect x="3.635" y="3.635" width="16.192" height="16.192" fill="#656565"/></g>
+    <g clip-path="url(#intersection_clip3)"><rect x="4.916" y="4.916" width="13.631" height="13.631" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="miter"/></g>
+    <g clip-path="url(#intersection_clip4)"><circle cx="19.533" cy="19.533" r="7.257" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/></g>
+  </g>
+  <g id="difference" transform="translate(64 96)">
+    <g clip-path="url(#difference_clip1)"><circle cx="19.533" cy="19.533" r="7.257" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g clip-path="url(#difference_clip2)"><rect x="3.635" y="3.635" width="16.192" height="16.192" fill="#656565"/></g>
+    <g clip-path="url(#difference_clip3)"><rect x="4.916" y="4.916" width="13.631" height="13.631" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="miter"/></g>
+    <g clip-path="url(#difference_clip2)"><rect x="4.916" y="4.916" width="13.631" height="13.631" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="miter"/></g>
+    <g clip-path="url(#difference_clip4)"><circle cx="19.533" cy="19.533" r="7.257" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/></g>
+  </g>
+  <g id="symmetrize" transform="translate(96 96)">
+    <circle cx="16" cy="2.163" r="0.883" fill="#808080"/>
+    <circle cx="16" cy="5.254" r="0.883" fill="#808080"/>
+    <circle cx="16" cy="8.346" r="0.883" fill="#808080"/>
+    <circle cx="16" cy="11.437" r="0.883" fill="#808080"/>
+    <circle cx="16" cy="14.528" r="0.883" fill="#808080"/>
+    <circle cx="16" cy="17.619" r="0.883" fill="#808080"/>
+    <circle cx="16" cy="20.71" r="0.883" fill="#808080"/>
+    <circle cx="16" cy="23.802" r="0.883" fill="#808080"/>
+    <circle cx="16" cy="26.893" r="0.883" fill="#808080"/>
+    <circle cx="16" cy="29.984" r="0.883" fill="#808080"/>
+    <path d="M16 8.64 C13.056 3.046 3.046 3.635 3.341 11.29 C3.635 17.766 13.645 20.71 16 26.598" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M16 8.64 C18.944 3.046 28.954 3.635 28.659 11.29 C28.365 17.766 18.355 20.71 16 26.598" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16" cy="8.64" r="3.032" fill="#ffffff"/>
+    <circle cx="16" cy="26.598" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="split_active" transform="translate(128 96)">
+    <g clip-path="url(#split_active_clip2)">
+      <g clip-path="url(#split_active_clip1)">
+        <circle cx="19.533" cy="19.533" r="7.257" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="4.916" y="4.916" width="13.631" height="13.631" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="miter"/>
+      </g>
+    </g>
+  </g>
+  <g id="split_all" transform="translate(160 96)">
+    <g clip-path="url(#split_all_clip2)">
+      <g clip-path="url(#split_all_clip1)">
+        <circle cx="19.533" cy="19.533" r="7.257" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="4.916" y="4.916" width="13.631" height="13.631" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="miter"/>
+      </g>
+    </g>
+  </g>
+  <g id="round" transform="translate(0 128)">
+    <rect x="5.505" y="5.505" width="20.991" height="20.991" rx="4.607" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <g clip-path="url(#round_clip2)"><g clip-path="url(#round_clip1)"><rect x="5.505" y="5.505" width="20.991" height="20.991" rx="4.607" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/></g></g>
+    <circle cx="10.995" cy="10.995" r="3.032" fill="#ffffff"/>
+    <circle cx="21.005" cy="10.995" r="3.032" fill="#ffffff"/>
+    <circle cx="10.995" cy="21.005" r="3.032" fill="#ffffff"/>
+    <circle cx="21.005" cy="21.005" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="bridge" transform="translate(32 128)">
+    <path d="M5.696 24.979 C10.112 21.888 13.939 22.948 16.383 23.478" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M19.386 6.874 C22.271 9.494 23.242 11.466 24.891 15.794" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M16.383 23.478 C18.061 26.01 27.482 25.274 24.891 15.794" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16.383" cy="23.478" r="3.032" fill="#ffffff"/>
+    <circle cx="24.891" cy="15.794" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="corner" transform="translate(64 128)">
+    <path d="M3.635 26.304 L13.056 26.304" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M26.304 13.645 L26.304 3.635" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M13.056 26.304 C20.416 26.304 26.304 20.71 26.304 13.645" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M13.056 26.304 L26.304 26.304 L26.304 13.645" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="13.056" cy="26.304" r="3.032" fill="#ffffff"/>
+    <circle cx="26.304" cy="26.304" r="3.032" fill="#ffffff"/>
+    <circle cx="26.304" cy="13.645" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="offset" transform="translate(96 128)">
+    <path d="M10.701 10.701 L21.299 10.701 L21.299 21.299 L10.701 21.299 Z" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="4.916" y="4.916" width="22.168" height="22.168" rx="6.374" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g id="extend" transform="translate(128 128)">
+    <path d="M3.635 27.776 C11.878 27.776 15.411 23.066 17.472 17.472" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="3.635" cy="27.776" r="3.032" fill="#808080"/>
+    <path d="M17.472 17.472 L23.36 7.757" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <polygon points="25.421 4.224 25.542 12.537 18.029 8.029" fill="#ffffff"/>
+    <circle cx="17.472" cy="17.472" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="slide_point" transform="translate(160 128)">
+    <path d="M3.635 27.187 C8.346 10.701 23.654 10.701 28.365 27.187" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="3.635" cy="27.187" r="3.032" fill="#808080"/>
+    <circle cx="28.365" cy="27.187" r="3.032" fill="#808080"/>
+    <path d="M7.757 6.579 L19.533 6.579" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <polygon points="26.01 6.579 18.355 11.325 18.355 1.833" fill="#ffffff"/>
+    <circle cx="18.982" cy="15.317" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="slice" transform="translate(0 160)">
+    <circle cx="16" cy="16" r="11.04" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16" cy="16" r="4.416" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M16 4.96 L16 11.584" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16" cy="4.96" r="3.032" fill="#ffffff"/>
+    <circle cx="16" cy="11.584" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="handles_to_axis" transform="translate(32 160)">
+    <path d="M5.402 7.462 C13.939 9.735 19.827 13.056 19.238 28.365" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M5.402 7.462 L25.862 12.909" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="25.862" cy="12.909" r="3.032" fill="#808080"/>
+    <path d="M5.402 7.462 L26.893 7.462" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="5.402" cy="7.462" r="3.032" fill="#ffffff"/>
+    <circle cx="26.893" cy="7.462" r="3.032" fill="#ffffff"/>
+  </g>
+  <g id="handles_to_lines" transform="translate(64 160)">
+    <path d="M3.635 26.304 C11.584 27.482 21.005 5.696 28.365 16.294" fill="none" stroke="#808080" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M3.635 26.304 L11.584 27.482" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="3.635" cy="26.304" r="3.032" fill="#ffffff"/>
+    <circle cx="11.584" cy="27.482" r="3.032" fill="#ffffff"/>
+    <path d="M28.365 16.294 L21.005 5.696" fill="none" stroke="#ffffff" stroke-width="2.561" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="28.365" cy="16.294" r="3.032" fill="#ffffff"/>
+    <circle cx="21.005" cy="5.696" r="3.032" fill="#ffffff"/>
+  </g>
+</svg>

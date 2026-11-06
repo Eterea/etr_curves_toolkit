@@ -40,9 +40,10 @@ class ETR_CurveToolkitSettings(bpy.types.PropertyGroup):
     merge_threshold: FloatProperty(
         name="Threshold",
         description=(
-            "Maximum distance between two points to be merged, and longest "
-            "spline Remove Strays takes away. Shared by Join & Merge, "
-            "Remove Doubles and Remove Strays"
+            "Maximum distance between two points to be merged, longest spline "
+            "Remove Strays takes away, and how close a stray point has to be to "
+            "a spline to cut it. Shared by Join & Merge, Remove Doubles, Remove "
+            "Strays and Split at Stray Points"
         ),
         default=0.001,
         min=0.0,
@@ -55,7 +56,8 @@ class ETR_CurveToolkitSettings(bpy.types.PropertyGroup):
         name="Place Sources inside a Collection",
         description=(
             "Booleans and Splits: move the original curves into the collection "
-            "'Curve Boolean Sources' (created if needed, reused if it exists)"
+            "'Curve Boolean Sources' (created if needed, reused if it exists), which "
+            "is then excluded from the View Layer instead of hiding the curves"
         ),
         default=False,
     )

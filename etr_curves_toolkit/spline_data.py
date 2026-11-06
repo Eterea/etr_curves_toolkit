@@ -160,6 +160,26 @@ def point_selected(point, kind):
     return point.select
 
 
+def selected_segment(data):
+    """Index k of the segment picked by selecting its two ends, or None.
+
+    It is picked when exactly two control points of the spline are selected
+    (handles do not count) and they are consecutive: points k and k + 1, or
+    the last and the first of a closed spline (its closing segment, k = n - 1).
+    A single point, two points apart or three or more mean the whole spline.
+    """
+    picked = [i for i, p in enumerate(data.points) if p.select]
+    if len(picked) != 2:
+        return None
+    a, b = picked
+    n = len(data.points)
+    if b == a + 1:
+        return a
+    if data.cyclic and n > 2 and a == 0 and b == n - 1:
+        return n - 1
+    return None
+
+
 def replace_splines(curve, datas):
     """Replace every spline of `curve` by the given snapshots (in order)."""
     curve.splines.clear()

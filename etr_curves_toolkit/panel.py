@@ -4,7 +4,22 @@
 """
 Curve Toolkit - Sidebar panel
 
-3D Viewport > Sidebar (N) > Tool > Curve Toolkit
+3D Viewport > Sidebar (N) > Eterea Curves
+
+The tools are split into one top-level panel (header-only, its bl_label is
+the "Eterea Curves Toolkit" title shown above everything else) and five
+sub-panels, one per section (the first one, Create Curves, has four rows of
+icon buttons: the primitives, the circles from points, the construction
+lines (circle from a segment, tangents, perpendicular) and the construction
+points; Shaping Splines holds the tools that reshape a spline: Round, Bridge,
+Arcs to Corners, Offset, Extend, Slide Point, Slice and Undo Slice, and last
+Handles to Axis and Handles to Lines; Utilities goes from whole splines
+(Select All by Type, Separate) to points (Subdivide, Simplify, Dissolve, Set
+First Point, Invert Direction, the pairs and the merges) and ends with
+Resolution and Cyclic), each with its own native collapse arrow
+(bl_parent_id), plus Global Settings at the bottom (the Threshold that tools
+of several sections share). Utilities, Change Origin and Global Settings
+start collapsed.
 
 PANEL_CATEGORY is kept as its own constant (rather than hardcoded in every
 panel class) so the sidebar tab can be renamed in one place if needed.
@@ -17,7 +32,7 @@ import bpy.utils.previews
 
 from .context_utils import resolution_source
 
-PANEL_CATEGORY = "Tool"
+PANEL_CATEGORY = "Eterea Curves"
 
 _ICONS_DIR = Path(__file__).parent / "icons"
 _icons = None  # bpy.utils.previews collection
@@ -70,20 +85,33 @@ def _equal_slots(layout, count, scale_y=None):
 
 
 class ETR_PT_curve_toolkit(bpy.types.Panel):
+    """Top-level, header-only panel: its bl_label is the title shown above
+    every section when the "Eterea Curves" tab is open. All the tools live
+    in its sub-panels below.
+    """
     bl_idname = "ETR_PT_curve_toolkit"
-    bl_label = "Curve Toolkit"
+    bl_label = "Eterea Curves Toolkit"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = PANEL_CATEGORY
 
     def draw(self, context):
-        layout = self.layout
-        settings = context.scene.etr_curves_toolkit
+        pass
 
-        # --- Primitive Curves ----------------------------------------------------
-        layout.label(text="Primitive Curves")
+
+class ETR_PT_curve_toolkit_primitives(bpy.types.Panel):
+    bl_idname = "ETR_PT_curve_toolkit_primitives"
+    bl_parent_id = "ETR_PT_curve_toolkit"
+    bl_label = "Create Curves"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column(align=True)
+
         for slot, (idname, icon) in zip(
-            _equal_slots(layout, 5, scale_y=1.4),
+            _equal_slots(col, 5, scale_y=1.4),
             (
                 ("etr.curve_toolkit_add_line", 'line'),
                 ("etr.curve_toolkit_add_bezier", 'bezier'),
@@ -94,50 +122,141 @@ class ETR_PT_curve_toolkit(bpy.types.Panel):
         ):
             _operator(slot, idname, "", icon, icon='CURVE_DATA')
 
-        # --- Curve Booleans and Splits -------------------------------------------
-        layout.separator()
-        layout.label(text="Curve Booleans")
+        # Second row: circles and arcs through points that are already in the
+        # scene (Edit Mode of a mesh or of a curve).
+        for slot, (idname, icon) in zip(
+            _equal_slots(col, 5, scale_y=1.4),
+            (
+                ("etr.curve_toolkit_circle_center_point", 'circle_center_point'),
+                ("etr.curve_toolkit_circle_2_points", 'circle_2_points'),
+                ("etr.curve_toolkit_circle_3_points", 'circle_3_points'),
+                ("etr.curve_toolkit_circle_inscribed", 'circle_inscribed'),
+                ("etr.curve_toolkit_circle_tangent_2", 'circle_tangent_2'),
+            ),
+        ):
+            _operator(slot, idname, "", icon, icon='MESH_CIRCLE')
+
+        # Third row: construction lines from what is already there.
+        for slot, (idname, icon) in zip(
+            _equal_slots(col, 4, scale_y=1.4),
+            (
+                ("etr.curve_toolkit_circle_segment_center", 'circle_segment_center'),
+                ("etr.curve_toolkit_tangents_2_circles", 'tangents_2_circles'),
+                ("etr.curve_toolkit_tangents_from_point", 'tangents_from_point'),
+                ("etr.curve_toolkit_perpendicular", 'perpendicular'),
+            ),
+        ):
+            _operator(slot, idname, "", icon, icon='CURVE_DATA')
+
+        # Fourth row: construction points (and the lines that join them).
+        for slot, (idname, icon) in zip(
+            _equal_slots(col, 4, scale_y=1.4),
+            (
+                ("etr.curve_toolkit_lines_from_points", 'lines_from_points'),
+                ("etr.curve_toolkit_points_in_between", 'points_in_between'),
+                ("etr.curve_toolkit_points_along_curve", 'points_along_curve'),
+                ("etr.curve_toolkit_points_at_intersections", 'points_at_intersections'),
+            ),
+        ):
+            _operator(slot, idname, "", icon, icon='CURVE_DATA')
+
+
+class ETR_PT_curve_toolkit_booleans(bpy.types.Panel):
+    bl_idname = "ETR_PT_curve_toolkit_booleans"
+    bl_parent_id = "ETR_PT_curve_toolkit"
+    bl_label = "Curve Booleans"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    def draw(self, context):
+        layout = self.layout
+        settings = context.scene.etr_curves_toolkit
+
         for slot, (op, icon) in zip(
             _equal_slots(layout, 3, scale_y=1.4),
             (('UNION', 'union'), ('INTERSECTION', 'intersection'), ('DIFFERENCE', 'difference')),
         ):
             _operator(slot, "etr.curve_toolkit_boolean", "", icon, icon='MOD_BOOLEAN').operation = op
 
+        # Part of the group, a little apart: it is neither a Boolean nor a
+        # Split, but it works the same way (new curves, the originals kept).
+        col = layout.column(align=True)
+        col.separator(factor=0.5)
+        _operator(col, "etr.curve_toolkit_symmetrize", "Symmetrize", "symmetrize", icon='MOD_MIRROR')
+
         col = layout.column(align=True)
         col.separator(factor=0.5)
         row = col.row(align=True)
         _operator(row, "etr.curve_toolkit_split", "Split Active", "split_active").mode = 'ACTIVE'
-        _operator(row, "etr.curve_toolkit_split", "Split All", "split_all").mode = 'ALL'
+        _operator(row, "etr.curve_toolkit_split_all", "Split All", "split_all")
         col.operator("etr.curve_toolkit_split_at_points")
+        col.operator("etr.curve_toolkit_split_at_stray_points")
 
         col = layout.column(align=True)
         col.prop(settings, "sources_in_collection")
         col.prop(settings, "results_in_collection")
 
-        # --- Rounds, Bridge & Corners -------------------------------------------
-        layout.separator()
-        layout.label(text="Rounds, Bridge & Corners")
-        row = layout.row(align=True)
+
+class ETR_PT_curve_toolkit_rounds(bpy.types.Panel):
+    """Shaping Splines (its idname keeps the old name of the section, Rounds,
+    Bridge & Corners, so nothing that refers to it breaks)."""
+    bl_idname = "ETR_PT_curve_toolkit_rounds"
+    bl_parent_id = "ETR_PT_curve_toolkit"
+    bl_label = "Shaping Splines"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    def draw(self, context):
+        layout = self.layout
+
+        # Round and Bridge, with Arcs to Corners (the inverse of Round) glued
+        # under them.
+        col = layout.column(align=True)
+        row = col.row(align=True)
         _operator(row, "etr.curve_toolkit_round_corners", "Round", "round")
         _operator(row, "etr.curve_toolkit_bridge_curves", "Bridge", "bridge")
-
-        # Slightly apart from the two above: it is the inverse of Round, and it
-        # takes a pair of points instead of a corner or two ends.
-        col = layout.column(align=True)
-        col.separator(factor=0.5)
         _operator(col, "etr.curve_toolkit_arcs_to_corners", "Arcs to Corners", "corner")
 
-        # --- Utilities ----------------------------------------------------------
-        layout.separator()
-        layout.label(text="Utilities")
+        # The tools that push a spline out, lengthen it, move one of its
+        # points along it, or divide it with a seam (and take a seam away).
         col = layout.column(align=True)
-        col.operator("etr.curve_toolkit_offset")
-        col.operator("etr.curve_toolkit_extend")
-        col.operator("etr.curve_toolkit_slide_point")
+        col.separator(factor=0.5)
+        _operator(col, "etr.curve_toolkit_offset", "Offset", "offset")
+        _operator(col, "etr.curve_toolkit_extend", "Extend", "extend")
+        _operator(col, "etr.curve_toolkit_slide_point", "Slide Point", "slide_point")
+        row = col.row(align=True)
+        _operator(row, "etr.curve_toolkit_slice", "Slice", "slice")
+        row.operator("etr.curve_toolkit_undo_slice", text="Undo Slice")
 
+        # The handles, last: onto the axes, or drawn as lines.
         col = layout.column(align=True)
-        col.operator("etr.curve_toolkit_set_first_point")
-        col.operator("etr.curve_toolkit_invert_direction")
+        col.separator(factor=0.5)
+        _operator(col, "etr.curve_toolkit_handles_to_axis", "Handles to Axis", "handles_to_axis")
+        _operator(col, "etr.curve_toolkit_handles_to_lines", "Handles to Lines",
+                  "handles_to_lines")
+
+
+class ETR_PT_curve_toolkit_utilities(bpy.types.Panel):
+    bl_idname = "ETR_PT_curve_toolkit_utilities"
+    bl_parent_id = "ETR_PT_curve_toolkit"
+    bl_label = "Utilities"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        settings = context.scene.etr_curves_toolkit
+
+        # Whole splines first (v0.24.0): pick them (the strays, or every
+        # spline of one type, from a menu that runs as soon as an entry is
+        # picked) and send the picked ones to objects of their own.
+        col = layout.column(align=True)
+        row = col.split(factor=0.55, align=True)
+        row.label(text="Select All by Type")
+        row.operator_menu_enum("etr.curve_toolkit_select_by_type", "kind", text="Type")
+        col = layout.column(align=True)
+        col.operator("etr.curve_toolkit_separate")
 
         # Blender's own Subdivide, Decimate Curve and Dissolve Vertices
         # (Edit Mode). Simplify and Dissolve both take points away, so they go
@@ -148,36 +267,33 @@ class ETR_PT_curve_toolkit(bpy.types.Panel):
         row.operator("curve.decimate", text="Simplify")
         row.operator("curve.dissolve_verts", text="Dissolve")
 
-        # Resolution U of many splines at once, on a row of its own: inside the
-        # column above, reading down, Resolution looked like a setting of
-        # Simplify and Set All like one of Dissolve.
+        # The order of the points.
+        col = layout.column(align=True)
+        col.operator("etr.curve_toolkit_set_first_point")
+        col.operator("etr.curve_toolkit_invert_direction")
+
+        # The pairs: two points, wherever they are, so the Threshold (Global
+        # Settings) does not reach them. Snap and Swap only move the points;
+        # Merge welds them.
+        col = layout.column(align=True)
+        col.operator("etr.curve_toolkit_snap_pair")
+        col.operator("etr.curve_toolkit_merge_pair")
+        col.operator("etr.curve_toolkit_swap_pair")
+
+        # The merges that use the Threshold.
+        col = layout.column(align=True)
+        col.operator("etr.curve_toolkit_merge_by_distance")
+        col.operator("etr.curve_toolkit_join_merge")
+        col.operator("etr.curve_toolkit_remove_doubles")
+
+        # Resolution U of many splines at once, on a row of its own (inside
+        # a column, Resolution looked like a setting of the button above).
         row = layout.row(align=True)
         sub = row.row(align=True)
         sub.enabled = resolution_source(context) is not None
         sub.prop(settings, "resolution", text="Resolution")
         value = settings.resolution
         row.operator("etr.curve_toolkit_set_resolution", text="Set All").resolution = value
-
-        # On its own: it takes whole splines out of the curve, instead of
-        # changing the points of one.
-        col = layout.column(align=True)
-        col.separator(factor=0.5)
-        col.operator("etr.curve_toolkit_separate")
-        col.separator(factor=0.5)
-
-        # Merge Pair takes a pair of points wherever they are, so it is the one
-        # of the merges the Threshold does not reach: slightly apart from the
-        # three below, which it does.
-        col = layout.column(align=True)
-        col.operator("etr.curve_toolkit_merge_pair")
-        col.separator(factor=0.5)
-
-        col = layout.column(align=True)
-        col.operator("etr.curve_toolkit_merge_by_distance")
-        col.operator("etr.curve_toolkit_join_merge")
-        col.operator("etr.curve_toolkit_remove_doubles")
-        col.operator("etr.curve_toolkit_remove_strays")
-        col.prop(settings, "merge_threshold")
 
         # Blender's own Cyclic U of the active spline (Sidebar > Item > Active
         # Spline), with its Toggle Cyclic operator next to it, which acts on
@@ -192,15 +308,58 @@ class ETR_PT_curve_toolkit(bpy.types.Panel):
             sub.label(text="Cyclic")
         row.operator("curve.cyclic_toggle", text="Toggle All")
 
-        # --- Change Origin ------------------------------------------------------
-        layout.separator()
-        layout.label(text="Change Origin")
-        row = layout.row(align=True)
+
+class ETR_PT_curve_toolkit_origin(bpy.types.Panel):
+    bl_idname = "ETR_PT_curve_toolkit_origin"
+    bl_parent_id = "ETR_PT_curve_toolkit"
+    bl_label = "Change Origin"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column(align=True)
+        # Object and Edit Mode: the origin goes to the world origin or to the
+        # 3D Cursor (each on a line of its own, so the text is not squeezed).
+        col.operator("etr.curve_toolkit_origin_to_target", text="To World Origin").target = 'WORLD'
+        col.operator("etr.curve_toolkit_origin_to_target", text="To 3D Cursor").target = 'CURSOR'
+        # Edit Mode: the origin goes to the selected control point.
+        col.operator("etr.curve_toolkit_origin_to_selected")
+        # Object Mode: a place along the first spline of each curve (Geo: the
+        # center of its bounds). Edit Mode: of the selected spline, and Mid
+        # of the segment between two consecutive selected points.
+        row = col.row(align=True)
         for mode, text in (('IN', "In"), ('MID', "Mid"), ('OUT', "Out"), ('GEOMETRY', "Geo")):
             row.operator("etr.curve_toolkit_change_origin", text=text).mode = mode
 
 
-classes = (ETR_PT_curve_toolkit,)
+class ETR_PT_curve_toolkit_global(bpy.types.Panel):
+    """Settings shared by tools of several sections."""
+    bl_idname = "ETR_PT_curve_toolkit_global"
+    bl_parent_id = "ETR_PT_curve_toolkit"
+    bl_label = "Global Settings"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        settings = context.scene.etr_curves_toolkit
+        col = self.layout.column(align=True)
+        # Join & Merge, Remove Doubles, Remove Strays (Utilities) and Split
+        # at Stray Points (Curve Booleans).
+        col.prop(settings, "merge_threshold")
+
+
+classes = (
+    ETR_PT_curve_toolkit,
+    ETR_PT_curve_toolkit_primitives,
+    ETR_PT_curve_toolkit_booleans,
+    ETR_PT_curve_toolkit_rounds,
+    ETR_PT_curve_toolkit_utilities,
+    ETR_PT_curve_toolkit_origin,
+    ETR_PT_curve_toolkit_global,
+)
 
 
 def register():

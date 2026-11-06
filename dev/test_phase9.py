@@ -5,7 +5,7 @@
 Tests of the Phase 9 tools of Curve Toolkit (Arcs to Corners, Remove Strays and
 Set Resolution), with Blender as a Python module:
 
-    python test_phase9.py <folder that contains the etr_curve_toolkit package>
+    python test_phase9.py <folder that contains the etr_curves_toolkit package>
 
 Every test builds its own curves from scratch. Lengths are checked in world
 space, so a tool that forgot the transform of the object would fail.
@@ -19,12 +19,12 @@ sys.path.insert(0, sys.argv[1])
 
 import bpy  # noqa: E402
 
-import etr_curve_toolkit as toolkit  # noqa: E402
-from etr_curve_toolkit import arcs_to_corners as a2c  # noqa: E402
-from etr_curve_toolkit import geometry as geo  # noqa: E402
-from etr_curve_toolkit import context_utils as cu  # noqa: E402
-from etr_curve_toolkit import panel  # noqa: E402
-from etr_curve_toolkit import spline_data as sd  # noqa: E402
+import etr_curves_toolkit as toolkit  # noqa: E402
+from etr_curves_toolkit import arcs_to_corners as a2c  # noqa: E402
+from etr_curves_toolkit import geometry as geo  # noqa: E402
+from etr_curves_toolkit import context_utils as cu  # noqa: E402
+from etr_curves_toolkit import panel  # noqa: E402
+from etr_curves_toolkit import spline_data as sd  # noqa: E402
 
 toolkit.register()
 ops = bpy.ops.etr
@@ -39,7 +39,7 @@ QUARTER = 4.0 / 3.0 * math.tan(math.pi / 8.0)
 
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    if not hasattr(bpy.types.Scene, "etr_curve_toolkit"):
+    if not hasattr(bpy.types.Scene, "etr_curves_toolkit"):
         toolkit.register()
 
 
@@ -540,7 +540,7 @@ def the_transform_of_the_object_does_not_matter():
 def strays_scene(threshold=0.001, scale=(1, 1, 1)):
     """A curve with a good square, a single-point spline and a tiny one."""
     reset()
-    bpy.context.scene.etr_curve_toolkit.merge_threshold = threshold
+    bpy.context.scene.etr_curves_toolkit.merge_threshold = threshold
     good = poly([(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)], cyclic=True)
     alone = poly([(3, 0, 0)])
     tiny = poly([(5, 0, 0), (5.0002, 0, 0)])
@@ -589,7 +589,7 @@ def remove_strays_in_edit_mode_looks_at_every_spline():
 @test
 def a_curve_of_only_strays_is_left_empty():
     reset()
-    bpy.context.scene.etr_curve_toolkit.merge_threshold = 0.001
+    bpy.context.scene.etr_curves_toolkit.merge_threshold = 0.001
     obj = make_curve("c", [poly([(0, 0, 0)]), poly([(2, 0, 0), (2.0001, 0, 0)])])
     select_only(obj)
     assert ops.curve_toolkit_remove_strays() == {'FINISHED'}
@@ -722,7 +722,7 @@ def the_resolution_field_resets_to_twelve():
     # property of the kit instead of Spline.resolution_u, whose own default
     # comes back as 0 and lands on 1.
     reset()
-    prop = bpy.context.scene.etr_curve_toolkit.bl_rna.properties["resolution"]
+    prop = bpy.context.scene.etr_curves_toolkit.bl_rna.properties["resolution"]
     assert prop.default == 12, prop.default
     assert bpy.types.Spline.bl_rna.properties["resolution_u"].default == 0
     assert bpy.types.Curve.bl_rna.properties["resolution_u"].default == 12
@@ -732,7 +732,7 @@ def the_resolution_field_resets_to_twelve():
 def the_resolution_field_writes_where_it_reads():
     reset()
     obj = make_curve("c", [poly([(0, 0, 0), (1, 0, 0)]), poly([(0, 2, 0), (1, 2, 0)])])
-    settings = bpy.context.scene.etr_curve_toolkit
+    settings = bpy.context.scene.etr_curves_toolkit
     select_only(obj)
     assert settings.resolution == 12
     # Object Mode: the curve itself, which Blender passes on to every spline.
@@ -753,7 +753,7 @@ def the_resolution_field_writes_where_it_reads():
 def the_resolution_field_holds_up_without_a_curve():
     reset()
     bpy.ops.mesh.primitive_cube_add()
-    settings = bpy.context.scene.etr_curve_toolkit
+    settings = bpy.context.scene.etr_curves_toolkit
     assert settings.resolution == 12
     settings.resolution = 5          # nowhere to write it: no error either
     assert settings.resolution == 12
@@ -773,14 +773,15 @@ def the_panel_draws_the_new_tools():
     fake_self.layout = layout
     ctx = mock.MagicMock()
     ctx.scene = bpy.context.scene
-    panel.ETR_PT_curve_toolkit.draw(fake_self, ctx)
+    for cls in panel.classes:
+        cls.draw(fake_self, ctx)
 
     idnames = set()
     for call in layout.mock_calls + layout.row().mock_calls + layout.column().mock_calls:
-        if call[0].endswith("operator") and call[1]:
+        if (call[0].endswith("operator") or call[0].endswith("operator_menu_enum")) and call[1]:
             idnames.add(call[1][0])
     for idname in ("etr.curve_toolkit_arcs_to_corners",
-                   "etr.curve_toolkit_remove_strays",
+                   "etr.curve_toolkit_select_by_type",
                    "etr.curve_toolkit_set_resolution"):
         assert idname in idnames, f"{idname} is not drawn by the panel"
         module, name = idname.split(".")

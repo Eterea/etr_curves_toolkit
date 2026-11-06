@@ -326,7 +326,7 @@ def extended(data, tangent, centre, curvature, length):
 # -----------------------------------------------------------------------------
 
 class ETR_OT_curve_toolkit_extend(bpy.types.Operator):
-    """Extend the open curves from their selected end points: each point stays where it is and a new piece grows out of it, as an arc that leaves with the same tangent. On a Bezier spline, Automatic keeps the curvature the curve arrives with and Manual turns it by the Curvature angle (positive to the right, up to a full circle). A Poly spline is extended straight, in the direction of its last segment turned by the Direction angle. Several end points at a time share the same settings; a selected point that is not the end of an open Poly or Bezier spline is left alone"""
+    """Extend the open curves from their selected end points, with a new arc that leaves with the same tangent. Automatic or Manual curvature for Bezier, a Direction angle for Poly. Several end points at a time"""
     bl_idname = "etr.curve_toolkit_extend"
     bl_label = "Extend"
     bl_options = {'REGISTER', 'UNDO'}

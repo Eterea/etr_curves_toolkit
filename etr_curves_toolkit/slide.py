@@ -559,7 +559,7 @@ def _check(data, k):
 
 
 class ETR_OT_curve_toolkit_slide_point(bpy.types.Operator):
-    """Slide the selected control point along the curve it sits on, keeping the shape of that stretch as close to what it was as possible. Position (F9) is where the point sits between its two neighbours, measured along the curve, and it opens showing where the point already is. On an end point 0 is where it is now and 1 is its neighbour, which shortens the curve at that end. The report says how far the shape drifted. Bezier only; a point whose handles are not aligned is a corner and is refused"""
+    """Slide the selected control point along its curve, keeping the shape as close as possible. Position (F9) measures where it sits between its neighbours. Bezier only"""
     bl_idname = "etr.curve_toolkit_slide_point"
     bl_label = "Slide Point"
     bl_options = {'REGISTER', 'UNDO'}

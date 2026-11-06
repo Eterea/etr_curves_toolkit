@@ -7,7 +7,7 @@ splines, Offset as a new spline, Extend Curve), of the order of the Adjust
 Last Operation panel and of context_utils.world_matrix(), with Blender as a
 Python module:
 
-    python test_edit_mode.py <folder that contains the etr_curve_toolkit package>
+    python test_edit_mode.py <folder that contains the etr_curves_toolkit package>
 
 Every test builds its own curves from scratch. Shapes are checked in world
 space, so a tool that forgot the transform of the object would fail.
@@ -22,11 +22,11 @@ sys.path.insert(0, sys.argv[1])
 import bpy  # noqa: E402
 from mathutils import Vector  # noqa: E402
 
-import etr_curve_toolkit as toolkit  # noqa: E402
-from etr_curve_toolkit import spline_data as sd  # noqa: E402
-from etr_curve_toolkit import primitives as prim  # noqa: E402
-from etr_curve_toolkit import extend as ext  # noqa: E402
-from etr_curve_toolkit.context_utils import world_matrix  # noqa: E402
+import etr_curves_toolkit as toolkit  # noqa: E402
+from etr_curves_toolkit import spline_data as sd  # noqa: E402
+from etr_curves_toolkit import primitives as prim  # noqa: E402
+from etr_curves_toolkit import extend as ext  # noqa: E402
+from etr_curves_toolkit.context_utils import world_matrix  # noqa: E402
 
 toolkit.register()
 ops = bpy.ops.etr
@@ -38,7 +38,7 @@ ops = bpy.ops.etr
 
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    if not hasattr(bpy.types.Scene, "etr_curve_toolkit"):
+    if not hasattr(bpy.types.Scene, "etr_curves_toolkit"):
         toolkit.register()
 
 
@@ -406,7 +406,7 @@ def offset_in_edit_mode_cuts_a_spline_in_pieces():
 @test
 def primitives_draw_their_size_before_align_location_rotation():
     expected = {
-        "ETR_OT_curve_toolkit_add_line": ("radius",),
+        "ETR_OT_curve_toolkit_add_line": ("points", "radius"),
         "ETR_OT_curve_toolkit_add_bezier": ("radius",),
         "ETR_OT_curve_toolkit_add_rectangle": ("width", "height"),
         "ETR_OT_curve_toolkit_add_polygon": ("sides", "radius"),
@@ -1085,7 +1085,7 @@ def separate_keeps_the_look_and_the_place_of_the_source():
 
 @test
 def panel_cyclic_row_finds_the_active_spline():
-    from etr_curve_toolkit import panel
+    from etr_curves_toolkit import panel
 
     reset()
     assert panel._active_spline(bpy.context) is None, "no curve, no spline"

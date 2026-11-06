@@ -21,8 +21,9 @@ segments (Poly, or Bezier with Vector handles) are cubics flagged as lines.
                        (the shape of every piece is exact), each piece is kept
                        or dropped by testing whether it lies inside the other
                        region, and the kept pieces are chained into loops.
-  - split_intervals()  where each path is cut by the paths of other owners,
-                       as parameter intervals. extract() builds the pieces.
+  - split_intervals()  where each path is cut by the paths of other owners
+                       (and, if asked, where it crosses itself), as parameter
+                       intervals. extract() builds the pieces.
 
 All tolerances are relative to the size of the input (see Tolerances).
 """
@@ -579,8 +580,68 @@ class Path:
         self.owner = owner
 
 
-def split_intervals(paths, targets, tol):
+def _joints(n, cyclic, k, m):
+    """Which ends segments k < m of one path share as neighbours: a list of
+    ('k1m0' = end of k is start of m, 'k0m1' = start of k is end of m)."""
+    out = []
+    if m == k + 1:
+        out.append('k1m0')
+    if cyclic and k == 0 and m == n - 1:
+        out.append('k0m1')
+    return out
+
+
+def _at_joint(a, b, joints, p, tol):
+    """True when `p` is the point where neighbours a and b meet (not a
+    crossing). Only the joint they really share counts: a path can also pass
+    again over one of its points, and that is a crossing."""
+    for joint in joints:
+        q = a.p1 if joint == 'k1m0' else a.p0
+        if _dist(p, q) <= tol.join:
+            return True
+    return False
+
+
+#: A curved segment is checked for a loop of its own in this many parts.
+_SELF_PARTS = 4
+
+
+def _self_crossings(path, boxes, tol):
+    """Global parameters where a path crosses itself: two of its segments, or
+    one cubic that loops over itself. Each crossing gives two parameters."""
+    segs = path.segs
+    n = len(segs)
+    cuts = []
+    for k in range(n):
+        for m in range(k + 1, n):
+            if not _boxes_overlap(boxes[k], boxes[m], tol.join):
+                continue
+            joints = _joints(n, path.cyclic, k, m)
+            for s, t in intersect(segs[k], segs[m], tol):
+                if _at_joint(segs[k], segs[m], joints, segs[k].pt(s), tol):
+                    continue
+                cuts += [_global_param(path, k, s, tol), _global_param(path, m, t, tol)]
+    # A single cubic can loop over itself: its parts are crossed with each
+    # other, the same way.
+    for k, seg in enumerate(segs):
+        if seg.line:
+            continue
+        parts = [seg.sub(i / _SELF_PARTS, (i + 1) / _SELF_PARTS) for i in range(_SELF_PARTS)]
+        for i in range(_SELF_PARTS):
+            for j in range(i + 1, _SELF_PARTS):
+                joints = _joints(_SELF_PARTS, False, i, j)
+                for s, t in intersect(parts[i], parts[j], tol):
+                    if _at_joint(parts[i], parts[j], joints, parts[i].pt(s), tol):
+                        continue
+                    cuts += [_global_param(path, k, (i + s) / _SELF_PARTS, tol),
+                             _global_param(path, k, (j + t) / _SELF_PARTS, tol)]
+    return cuts
+
+
+def split_intervals(paths, targets, tol, self_cuts=False):
     """Where each target path is cut by the paths of other owners.
+
+    With self_cuts, a path is also cut where it crosses itself (a loop).
 
     Returns {path index: list of (g0, g1)} where g is a global parameter
     (segment index + local parameter). For a closed path, g1 may exceed the
@@ -603,6 +664,8 @@ def split_intervals(paths, targets, tol):
                         continue
                     for s, _ in intersect(seg, oseg, tol):
                         cuts.append(_global_param(path, k, s, tol))
+        if self_cuts:
+            cuts += _self_crossings(path, boxes[i], tol)
         cuts = [g for g in cuts if g is not None]
         cuts = _dedupe_params(path, sorted(cuts), tol)
         if not cuts:
@@ -634,14 +697,26 @@ def _global_param(path, k, s, tol):
     return float(k) + s
 
 
+def _same_place(path, g0, g1, tol):
+    """True when parameters g0 < g1 are the same place of the path: the two
+    points coincide and so does the middle of the stretch between them. A
+    path that crosses itself comes back to the same point after a loop, and
+    those two parameters are two different cuts."""
+    if _dist(point_at(path, g0), point_at(path, g1)) > tol.join:
+        return False
+    return _dist(point_at(path, g0), point_at(path, 0.5 * (g0 + g1))) <= tol.join
+
+
 def _dedupe_params(path, gs, tol):
     out = []
     for g in gs:
-        if out and _dist(point_at(path, g), point_at(path, out[-1])) <= tol.join:
+        if out and _same_place(path, out[-1], g, tol):
             continue
         out.append(g)
-    if path.cyclic and len(out) > 1 and _dist(point_at(path, out[0]), point_at(path, out[-1])) <= tol.join:
-        out.pop()
+    if path.cyclic and len(out) > 1:
+        n = len(path.segs)
+        if _same_place(path, out[-1], out[0] + n, tol):
+            out.pop()
     return out
 
 

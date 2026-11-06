@@ -211,7 +211,7 @@ def _weld_splines(da, ia, db, ib, target):
 
 
 class ETR_OT_curve_toolkit_merge_pair(bpy.types.Operator):
-    """Weld two selected control points into one, however far apart they are, the way Merge does with the vertices of a mesh. The points have to be two neighbours of the same spline, the two ends of the same open spline (which closes it) or the end points of two different open splines (which joins them into one): any other pair would cut a spline in two. On Bezier curves the handles travel with their point, so the segments that stay keep their shape. Any curve type"""
+    """Weld two selected control points into one, however far apart, without cutting the spline open: neighbours, spline ends, or the ends of two different open splines. Any curve type"""
     bl_idname = "etr.curve_toolkit_merge_pair"
     bl_label = "Merge Pair"
     bl_options = {'REGISTER', 'UNDO'}
@@ -312,7 +312,7 @@ def _point_count(datas):
 
 
 class ETR_OT_curve_toolkit_merge_by_distance(bpy.types.Operator):
-    """Weld the selected end points of open splines that are closer to each other than the Threshold, chaining the splines into as few as possible (a spline whose own two ends meet is closed). Only end points are welded: two points that overlap in the middle of a spline are left alone, which is what Remove Doubles is for. Select the end points to consider (A takes them all). Splines of different types are never welded to each other"""
+    """Weld the selected end points of open splines closer than the Threshold, at their centre, chaining them into as few splines as possible. Only end points are considered"""
     bl_idname = "etr.curve_toolkit_merge_by_distance"
     bl_label = "Merge by Distance"
     bl_options = {'REGISTER', 'UNDO'}

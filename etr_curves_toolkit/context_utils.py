@@ -180,22 +180,104 @@ def move_to_collection(obj, coll):
             c.objects.unlink(obj)
 
 
-def finish_sources_and_results(context, sources, results, anchor=None):
-    """Common ending of the Booleans and Splits (and Split at Points).
+def layer_collection(view_layer, coll):
+    """The LayerCollection of `coll` in the view layer, or None."""
+    stack = [view_layer.layer_collection]
+    while stack:
+        lc = stack.pop()
+        if lc.collection == coll:
+            return lc
+        stack.extend(lc.children)
+    return None
 
-    sources: the original objects. They are hidden and, with "Place Sources
-             inside a Collection", moved into "Curve Boolean Sources".
+
+_LAYER_FLAGS = ("exclude", "hide_viewport", "holdout", "indirect_only")
+
+
+def keep_sources_above_results(context):
+    """Put "Curve Boolean Sources" above "Curve Boolean Results" in the
+    Outliner when both share a parent and the results came first (e.g. the
+    results collection was made before "Place Sources inside a Collection" was
+    turned on, or by an older version).
+
+    The Python API cannot reorder the children of a collection, so the results
+    collection is unlinked and linked again (it goes to the end of the list).
+    Its View Layer settings and the hidden state of its objects are restored
+    in every View Layer of the scene.
+    """
+    sources = bpy.data.collections.get(SOURCES_COLLECTION)
+    results = bpy.data.collections.get(RESULTS_COLLECTION)
+    if sources is None or results is None:
+        return
+    scene = context.scene
+    for parent in [scene.collection, *scene.collection.children_recursive]:
+        children = list(parent.children)
+        if sources in children and results in children:
+            break
+    else:
+        return
+    if children.index(sources) < children.index(results):
+        return
+
+    saved = []
+    for vl in scene.view_layers:
+        lc = layer_collection(vl, results)
+        if lc is None:
+            continue
+        flags = {f: getattr(lc, f) for f in _LAYER_FLAGS}
+        hidden = []
+        for obj in results.all_objects:
+            try:
+                if obj.hide_get(view_layer=vl):
+                    hidden.append(obj)
+            except RuntimeError:
+                pass
+        saved.append((vl, flags, hidden))
+
+    parent.children.unlink(results)
+    parent.children.link(results)
+
+    for vl, flags, hidden in saved:
+        lc = layer_collection(vl, results)
+        if lc is None:
+            continue
+        for f, value in flags.items():
+            if getattr(lc, f) != value:
+                setattr(lc, f, value)
+        for obj in hidden:
+            try:
+                obj.hide_set(True, view_layer=vl)
+            except RuntimeError:
+                pass
+
+
+def finish_sources_and_results(context, sources, results, anchor=None):
+    """Common ending of the Booleans and Splits (and Split at Control Points,
+    Split at Stray Points).
+
+    sources: the original objects. With "Place Sources inside a Collection"
+             they are moved into "Curve Boolean Sources", and that collection
+             is excluded from the View Layer (the checkbox before the eye in
+             the Outliner) instead of hiding them one by one: it is enabled
+             while new sources go in and excluded again at the end. Without
+             that option they are hidden.
     results: list of (new object, source object). They are linked next to
              their source or, with "Place Results inside a Collection", into
              "Curve Boolean Results". Then they are selected.
     New collections are created inside the collection of `anchor` (by default
     the active object, or the first source). Existing ones are reused wherever
-    they are; their visibility is never changed.
+    they are; the visibility of the results collection is never changed.
     """
     settings = context.scene.etr_curves_toolkit
     if anchor is None:
         anchor = context.active_object if context.active_object in sources else sources[0]
     parent = anchor.users_collection[0] if anchor.users_collection else context.scene.collection
+
+    # The sources collection is created first, so it sits above the results
+    # one in the Outliner.
+    sources_coll = None
+    if settings.sources_in_collection:
+        sources_coll = named_collection(context, SOURCES_COLLECTION, parent)
 
     if settings.results_in_collection:
         coll = named_collection(context, RESULTS_COLLECTION, parent)
@@ -205,18 +287,29 @@ def finish_sources_and_results(context, sources, results, anchor=None):
         for obj, src in results:
             link_like(obj, src, context)
 
-    if settings.sources_in_collection:
-        coll = named_collection(context, SOURCES_COLLECTION, parent)
-        for obj in sources:
-            move_to_collection(obj, coll)
-
     for obj in context.selected_objects:
         obj.select_set(False)
-    for obj in sources:
-        try:
-            obj.hide_set(True)
-        except RuntimeError:
-            pass   # not in the View Layer (e.g. its collection is excluded)
+
+    if sources_coll is not None:
+        coll = sources_coll
+        lc = layer_collection(context.view_layer, coll)
+        if lc is not None:
+            lc.exclude = False
+        for obj in sources:
+            move_to_collection(obj, coll)
+            try:
+                obj.hide_set(False)   # shown again whenever the collection is
+            except RuntimeError:
+                pass
+        if lc is not None:
+            lc.exclude = True
+    else:
+        for obj in sources:
+            try:
+                obj.hide_set(True)
+            except RuntimeError:
+                pass   # not in the View Layer (e.g. its collection is excluded)
+    keep_sources_above_results(context)
     last = None
     for obj, _ in results:
         try:

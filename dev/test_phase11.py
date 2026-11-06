@@ -5,7 +5,7 @@
 Tests of the Phase 11 tool of Curve Toolkit (Offset > Both Sides and Join Both
 with Arcs), with Blender as a Python module:
 
-    python test_phase11.py <folder that contains the etr_curve_toolkit package>
+    python test_phase11.py <folder that contains the etr_curves_toolkit package>
 
 The geometry of the half-turns is checked against the exact circles they are
 meant to be, in world space, so a tool that forgot the transform of the object
@@ -20,11 +20,11 @@ sys.path.insert(0, sys.argv[1])
 
 import bpy  # noqa: E402
 
-import etr_curve_toolkit as toolkit  # noqa: E402
-from etr_curve_toolkit import curve_engine as eng  # noqa: E402
-from etr_curve_toolkit import geometry as geo  # noqa: E402
-from etr_curve_toolkit import offset_engine as off  # noqa: E402
-from etr_curve_toolkit import spline_data as sd  # noqa: E402
+import etr_curves_toolkit as toolkit  # noqa: E402
+from etr_curves_toolkit import curve_engine as eng  # noqa: E402
+from etr_curves_toolkit import geometry as geo  # noqa: E402
+from etr_curves_toolkit import offset_engine as off  # noqa: E402
+from etr_curves_toolkit import spline_data as sd  # noqa: E402
 
 toolkit.register()
 ops = bpy.ops.etr
@@ -43,7 +43,7 @@ ARC_ERROR = 3.0e-4
 
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    if not hasattr(bpy.types.Scene, "etr_curve_toolkit"):
+    if not hasattr(bpy.types.Scene, "etr_curves_toolkit"):
         toolkit.register()
 
 

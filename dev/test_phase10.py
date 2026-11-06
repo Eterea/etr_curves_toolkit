@@ -5,7 +5,7 @@
 Tests of the Phase 10 tools of Curve Toolkit (Merge Pair and Merge by
 Distance), with Blender as a Python module:
 
-    python test_phase10.py <folder that contains the etr_curve_toolkit package>
+    python test_phase10.py <folder that contains the etr_curves_toolkit package>
 
 Every test builds its own curves from scratch. Distances are checked in world
 space, so a tool that forgot the transform of the object would fail.
@@ -18,9 +18,9 @@ sys.path.insert(0, sys.argv[1])
 
 import bpy  # noqa: E402
 
-import etr_curve_toolkit as toolkit  # noqa: E402
-from etr_curve_toolkit import geometry as geo  # noqa: E402
-from etr_curve_toolkit import spline_data as sd  # noqa: E402
+import etr_curves_toolkit as toolkit  # noqa: E402
+from etr_curves_toolkit import geometry as geo  # noqa: E402
+from etr_curves_toolkit import spline_data as sd  # noqa: E402
 
 
 toolkit.register()
@@ -33,7 +33,7 @@ ops = bpy.ops.etr
 
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    if not hasattr(bpy.types.Scene, "etr_curve_toolkit"):
+    if not hasattr(bpy.types.Scene, "etr_curves_toolkit"):
         toolkit.register()
 
 
@@ -128,7 +128,7 @@ def cancelled(op, **kwargs):
 
 
 def threshold(value):
-    bpy.context.scene.etr_curve_toolkit.merge_threshold = value
+    bpy.context.scene.etr_curves_toolkit.merge_threshold = value
 
 
 TESTS = []
@@ -692,8 +692,8 @@ def the_panel_draws_in_edit_mode():
     edit(obj)
     # Nothing to assert beyond "it does not raise": the panel reads the active
     # spline and the scene settings, which is where a bad reorder would show.
-    from etr_curve_toolkit import panel
-    assert panel.ETR_PT_curve_toolkit.bl_label == "Curve Toolkit"
+    from etr_curves_toolkit import panel
+    assert panel.ETR_PT_curve_toolkit.bl_label == "Eterea Curves Toolkit"
     object_mode()
 
 

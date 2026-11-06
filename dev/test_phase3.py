@@ -4,7 +4,7 @@
 """
 Tests of Curve Booleans and Curve Splits with Blender as a Python module:
 
-    python test_phase3.py <folder that contains the etr_curve_toolkit package>
+    python test_phase3.py <folder that contains the etr_curves_toolkit package>
 """
 
 import math
@@ -16,10 +16,10 @@ sys.path.insert(0, sys.argv[1])
 import bpy  # noqa: E402
 from mathutils import Matrix, Vector  # noqa: E402
 
-import etr_curve_toolkit as toolkit  # noqa: E402
-from etr_curve_toolkit import booleans as bl  # noqa: E402
-from etr_curve_toolkit import curve_engine as eng  # noqa: E402
-from etr_curve_toolkit import spline_data as sd  # noqa: E402
+import etr_curves_toolkit as toolkit  # noqa: E402
+from etr_curves_toolkit import booleans as bl  # noqa: E402
+from etr_curves_toolkit import curve_engine as eng  # noqa: E402
+from etr_curves_toolkit import spline_data as sd  # noqa: E402
 
 toolkit.register()
 ops = bpy.ops.etr
@@ -266,9 +266,10 @@ def errors_leave_everything_untouched():
     select([a, b], b)
     assert cancelled(ops.curve_toolkit_boolean, operation='UNION')
 
-    reset()  # two splines in one object
+    reset()  # an open spline next to a closed one (several closed ones are fine)
     a = make("a", [square(0, 0, 2, 2)])
-    b = make("b", [circle(2, 2, 1), circle(5, 5, 1)])
+    b = make("b", [circle(2, 2, 1), sd.SplineData(
+        'POLY', [sd.PointData(co=(5, 5, 0)), sd.PointData(co=(6, 5, 0))], False, {})])
     select([a, b], b)
     assert cancelled(ops.curve_toolkit_boolean, operation='UNION')
 
@@ -346,7 +347,7 @@ def split_all():
 def split_active_and_collection():
     reset()
     sq, ci, ln = _split_scene()
-    bpy.context.scene.etr_curve_toolkit.results_in_collection = True
+    bpy.context.scene.etr_curves_toolkit.results_in_collection = True
     select([sq, ci, ln], ci)
     assert ops.curve_toolkit_split(mode='ACTIVE') == {'FINISHED'}
     ps = pieces()
@@ -451,7 +452,7 @@ def sources_and_results_collections():
     for o in (sq, ci):
         scene.collection.objects.unlink(o)
         parent.objects.link(o)
-    settings = scene.etr_curve_toolkit
+    settings = scene.etr_curves_toolkit
     settings.sources_in_collection = settings.results_in_collection = True
     select([sq, ci], ci)
     assert ops.curve_toolkit_boolean(operation='UNION') == {'FINISHED'}
@@ -461,7 +462,10 @@ def sources_and_results_collections():
     assert src.name in parent.children and res.name in parent.children
     assert set(src.objects) == {sq, ci} and list(sq.users_collection) == [src]
     assert list(res.objects) == [result()]
-    assert sq.hide_get() and ci.hide_get() and not result().hide_get()
+    # The Sources collection is excluded from the View Layer, instead of
+    # hiding the curves one by one.
+    assert bpy.context.view_layer.layer_collection.children["Work"].children[src.name].exclude
+    assert not result().hide_get()
 
     # The user moves the collections and hides the Sources one: they are reused
     # where they are, and their visibility is not touched.
@@ -479,7 +483,7 @@ def sources_and_results_collections():
 
     # Excluded Sources collection: still works (objects just leave the view layer).
     reset()
-    settings = bpy.context.scene.etr_curve_toolkit
+    settings = bpy.context.scene.etr_curves_toolkit
     settings.sources_in_collection = True
     src = bpy.data.collections.new("Curve Boolean Sources")
     bpy.context.scene.collection.children.link(src)
@@ -495,19 +499,20 @@ def sources_and_results_collections():
 @test
 def panel_and_registration():
     from unittest import mock
-    from etr_curve_toolkit import panel
+    from etr_curves_toolkit import panel
     reset()
     layout = mock.MagicMock()
     fake = mock.MagicMock()
     fake.layout = layout
     ctx = mock.MagicMock()
     ctx.scene = bpy.context.scene
-    panel.ETR_PT_curve_toolkit.draw(fake, ctx)
+    for cls in panel.classes:
+        cls.draw(fake, ctx)
     calls = [c for c in layout.mock_calls + layout.row().mock_calls + layout.column().mock_calls
              + layout.column().row().mock_calls]
     idnames = {c[1][0] for c in calls if c[0].endswith("operator") and c[1]}
     assert {"etr.curve_toolkit_boolean", "etr.curve_toolkit_split"} <= idnames, idnames
-    props = bpy.context.scene.etr_curve_toolkit.bl_rna.properties
+    props = bpy.context.scene.etr_curves_toolkit.bl_rna.properties
     assert "sources_in_collection" in props and "results_in_collection" in props
     toolkit.unregister()
     toolkit.register()

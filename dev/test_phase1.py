@@ -5,7 +5,7 @@
 Tests of Curve Toolkit phase 1 (utilities, Round Corners, Bridge) with Blender
 as a Python module:
 
-    python test_phase1.py <folder that contains the etr_curve_toolkit package>
+    python test_phase1.py <folder that contains the etr_curves_toolkit package>
 
 Every test builds its own curves from scratch and compares shapes through
 Blender's evaluated geometry, so a tool that changed a shape would fail.
@@ -20,9 +20,9 @@ sys.path.insert(0, sys.argv[1])
 import bpy  # noqa: E402
 from mathutils import Vector  # noqa: E402
 
-import etr_curve_toolkit as toolkit  # noqa: E402
-from etr_curve_toolkit import geometry as geo  # noqa: E402
-from etr_curve_toolkit import spline_data as sd  # noqa: E402
+import etr_curves_toolkit as toolkit  # noqa: E402
+from etr_curves_toolkit import geometry as geo  # noqa: E402
+from etr_curves_toolkit import spline_data as sd  # noqa: E402
 
 toolkit.register()
 ops = bpy.ops.etr
@@ -34,7 +34,7 @@ ops = bpy.ops.etr
 
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    toolkit.register() if not hasattr(bpy.types.Scene, "etr_curve_toolkit") else None
+    toolkit.register() if not hasattr(bpy.types.Scene, "etr_curves_toolkit") else None
 
 
 def make_curve(name, splines, dims='3D', loc=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1)):
@@ -272,15 +272,16 @@ def split_at_points_open_and_closed():
 def split_at_points_collection_and_nurbs():
     reset()
     o = make_curve("a", [poly([(0, 0, 0), (1, 0, 0), (2, 1, 0)])])
-    bpy.context.scene.etr_curve_toolkit.results_in_collection = True
-    bpy.context.scene.etr_curve_toolkit.sources_in_collection = True
+    bpy.context.scene.etr_curves_toolkit.results_in_collection = True
+    bpy.context.scene.etr_curves_toolkit.sources_in_collection = True
     select_only(o)
     ops.curve_toolkit_split_at_points()
     coll = bpy.data.collections.get("Curve Boolean Results")
     assert coll is not None and len(coll.objects) == 2
     assert not any(x.name.startswith("Split_") for x in bpy.context.scene.collection.objects)
     src = bpy.data.collections.get("Curve Boolean Sources")
-    assert src is not None and list(src.objects) == [o] and o.hide_get()
+    assert src is not None and list(src.objects) == [o]
+    assert bpy.context.view_layer.layer_collection.children[src.name].exclude
 
     reset()
     o = make_curve("n", [nurbs([(0, 0, 0), (1, 1, 0), (2, 0, 0), (3, 1, 0)])])
@@ -346,7 +347,7 @@ def join_merge_disconnected_warns_and_threshold():
     reset()
     a = make_curve("a", [poly([(0, 0, 0), (1, 0, 0)])])
     b = make_curve("b", [poly([(1.01, 0, 0), (2, 0, 0)])])
-    bpy.context.scene.etr_curve_toolkit.merge_threshold = 0.02
+    bpy.context.scene.etr_curves_toolkit.merge_threshold = 0.02
     select_objects([a, b], active=a)
     ops.curve_toolkit_join_merge()
     assert spline_count(a) == 1
@@ -544,7 +545,7 @@ def _curved_corner_spline(select=(1,)):
 
 
 def _no_corners_left(d):
-    from etr_curve_toolkit.round_bridge import _corner_kind
+    from etr_curves_toolkit.round_bridge import _corner_kind
     return all(_corner_kind(d, i) is None for i in range(len(d.points)))
 
 
@@ -675,8 +676,8 @@ def round_handle_types():
     object_mode()
     assert len(first_data(o).points) == 6
 
-    # Tension 1 on straight sides: Vector on the straight side, Free on the arc
-    # side; middle anchors of a wide arc (two curved sides) are Aligned.
+    # Tension 1 on straight sides: Vector on the straight side, Aligned on the
+    # arc side (in line with it); middle anchors of a wide arc are Aligned.
     reset()
     o = make_curve("b", [poly([(0, 0, 0), (4, 0.5, 0), (0, 1, 0)], select=(1,))])
     edit(o)
@@ -684,8 +685,8 @@ def round_handle_types():
     object_mode()
     d = first_data(o)
     arc = d.points[1:-1]
-    assert (arc[0].hlt, arc[0].hrt) == ('VECTOR', 'FREE')
-    assert (arc[-1].hlt, arc[-1].hrt) == ('FREE', 'VECTOR')
+    assert (arc[0].hlt, arc[0].hrt) == ('VECTOR', 'ALIGNED')
+    assert (arc[-1].hlt, arc[-1].hrt) == ('ALIGNED', 'VECTOR')
     assert all((p.hlt, p.hrt) == ('ALIGNED', 'ALIGNED') for p in arc[1:-1]) and len(arc) > 2
 
     # Curved corner: the tangent points join two curved segments -> Aligned.
@@ -874,7 +875,7 @@ def geometry_arc_accuracy():
 @test
 def panel_uses_existing_operators_properties_and_icons():
     from unittest import mock
-    from etr_curve_toolkit import panel
+    from etr_curves_toolkit import panel
 
     reset()
     layout = mock.MagicMock()
@@ -882,7 +883,8 @@ def panel_uses_existing_operators_properties_and_icons():
     fake_self.layout = layout
     ctx = mock.MagicMock()
     ctx.scene = bpy.context.scene
-    panel.ETR_PT_curve_toolkit.draw(fake_self, ctx)
+    for cls in panel.classes:
+        cls.draw(fake_self, ctx)
 
     idnames = set()
     for call in layout.mock_calls + layout.row().mock_calls + layout.column().mock_calls:
@@ -895,11 +897,12 @@ def panel_uses_existing_operators_properties_and_icons():
         assert hasattr(getattr(bpy.ops, mod), op), f"missing operator {idname}"
         bpy.ops.etr  # noqa: B018
 
-    props = bpy.context.scene.etr_curve_toolkit.bl_rna.properties
+    props = bpy.context.scene.etr_curves_toolkit.bl_rna.properties
     for name in ("merge_threshold", "sources_in_collection", "results_in_collection"):
         assert name in props
 
-    for icon in ("round", "bridge", "union", "intersection", "difference", "split_active", "split_all"):
+    for icon in ("round", "bridge", "union", "intersection", "difference", "split_active", "split_all",
+                 "circle_center_point", "circle_2_points", "circle_3_points", "circle_segment_center"):
         # icon_id is only assigned when a UI exists, so check the preview itself.
         assert icon in panel._icons and tuple(panel._icons[icon].icon_size) == (32, 32), f"icon {icon} not loaded"
 
@@ -907,10 +910,10 @@ def panel_uses_existing_operators_properties_and_icons():
 @test
 def register_unregister_cycle():
     toolkit.unregister()
-    assert not hasattr(bpy.types.Scene, "etr_curve_toolkit")
+    assert not hasattr(bpy.types.Scene, "etr_curves_toolkit")
     assert not hasattr(bpy.ops.etr, "curve_toolkit_round_corners") or True
     toolkit.register()
-    assert hasattr(bpy.types.Scene, "etr_curve_toolkit")
+    assert hasattr(bpy.types.Scene, "etr_curves_toolkit")
 
 
 def main():

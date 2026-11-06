@@ -5,7 +5,7 @@
 Tests of the Phase 12 tool of Curve Toolkit (Slide Point), with Blender as a
 Python module:
 
-    python test_phase12.py <folder that contains the etr_curve_toolkit package>
+    python test_phase12.py <folder that contains the etr_curves_toolkit package>
 
 The shape is checked by sampling the curve before and after and measuring how
 far the new one strays from the old one, which is the only thing this tool
@@ -22,10 +22,10 @@ sys.path.insert(0, sys.argv[1])
 
 import bpy  # noqa: E402
 
-import etr_curve_toolkit as toolkit  # noqa: E402
-from etr_curve_toolkit import geometry as geo  # noqa: E402
-from etr_curve_toolkit import slide as sl  # noqa: E402
-from etr_curve_toolkit import spline_data as sd  # noqa: E402
+import etr_curves_toolkit as toolkit  # noqa: E402
+from etr_curves_toolkit import geometry as geo  # noqa: E402
+from etr_curves_toolkit import slide as sl  # noqa: E402
+from etr_curves_toolkit import spline_data as sd  # noqa: E402
 
 toolkit.register()
 ops = bpy.ops.etr
@@ -44,7 +44,7 @@ NOISE = 1.0e-4
 
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    if not hasattr(bpy.types.Scene, "etr_curve_toolkit"):
+    if not hasattr(bpy.types.Scene, "etr_curves_toolkit"):
         toolkit.register()
 
 

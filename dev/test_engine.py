@@ -3,7 +3,7 @@
 
 """Tests of the pure-Python 2D engine (no Blender needed):
 
-    python test_engine.py <folder containing etr_curve_toolkit>
+    python test_engine.py <folder containing etr_curves_toolkit>
 """
 
 import importlib.util
@@ -13,7 +13,7 @@ import traceback
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location(
-    "curve_engine", Path(sys.argv[1]) / "etr_curve_toolkit" / "curve_engine.py")
+    "curve_engine", Path(sys.argv[1]) / "etr_curves_toolkit" / "curve_engine.py")
 E = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(E)
 

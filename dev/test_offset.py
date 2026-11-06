@@ -3,7 +3,7 @@
 
 """Tests of the pure-Python 2D offset engine (no Blender needed):
 
-    python test_offset.py <folder containing etr_curve_toolkit>
+    python test_offset.py <folder containing etr_curves_toolkit>
 """
 
 import math
@@ -11,7 +11,7 @@ import sys
 import traceback
 from pathlib import Path
 
-sys.path.insert(0, str(Path(sys.argv[1]) / "etr_curve_toolkit"))
+sys.path.insert(0, str(Path(sys.argv[1]) / "etr_curves_toolkit"))
 
 import curve_engine as E           # noqa: E402
 import offset_engine as O          # noqa: E402

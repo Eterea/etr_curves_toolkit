@@ -69,7 +69,9 @@ def _corner_kind(d, i):
     tangents are continuous: not a corner).
     """
     prev, nxt = _neighbour_indices(d, i)
-    if prev is None or nxt is None or prev == nxt:
+    # A closed spline of 2 points has the same point on both sides (two
+    # segments between the same pair of points): still a valid corner.
+    if prev is None or nxt is None or (prev == nxt and not d.cyclic):
         return None
     if _segment_is_straight(d, prev, i) and _segment_is_straight(d, i, nxt):
         return 'STRAIGHT'
@@ -231,6 +233,9 @@ def finalize_handle_types(d, indices):
       so those points can be selected and rounded again.
     - A point between two curved segments gets Aligned handles, so moving one
       handle moves the other and no pinch appears.
+    - A curved side whose handle goes on in line with a straight side (the
+      two ends of a round between straight segments) gets an Aligned handle
+      next to the Vector one.
     - Any other curved side stays Free.
     Finally every Vector handle of the spline is placed at one third.
     """
@@ -247,6 +252,13 @@ def finalize_handle_types(d, indices):
             p.hlt = 'VECTOR' if left else 'FREE'
         if right is not None:
             p.hrt = 'VECTOR' if right else 'FREE'
+        # Where a straight side meets a curved one with tangent continuity
+        # (the ends of a round), the curved handle is Aligned: Blender keeps
+        # it in line with the Vector handle, so the joint stays smooth.
+        if left and right is False and _continues(p.co, pts[prev].co, p.hr):
+            p.hrt = 'ALIGNED'
+        if right and left is False and _continues(p.co, pts[nxt].co, p.hl):
+            p.hlt = 'ALIGNED'
         # At an open end, the outer handle follows the inner one when it is
         # a Vector handle (a straight end).
         if left is None and right:
@@ -254,6 +266,14 @@ def finalize_handle_types(d, indices):
         if right is None and left:
             p.hrt = 'VECTOR'
     _recompute_vector_handles(d)
+
+
+def _continues(co, straight_to, handle, tol=1e-6):
+    """True when `handle` points exactly away from `straight_to` (the far end
+    of the straight side), so the curve goes on smoothly through `co`."""
+    a = geo.normalized(geo.sub(straight_to, co))
+    b = geo.normalized(geo.sub(handle, co))
+    return a is not None and b is not None and geo.dot(a, b) < -1.0 + tol
 
 
 def _recompute_vector_handles(d):
@@ -275,7 +295,7 @@ def _recompute_vector_handles(d):
 
 
 class ETR_OT_curve_toolkit_round_corners(bpy.types.Operator):
-    """Round the selected corners with circular arcs tangent to both sides, also between curved segments, without changing the rest of the curve. Radius and Tension can be changed afterwards in the Adjust Last Operation panel (F9). Poly and Bezier splines"""
+    """Round the selected corners with arcs tangent to both sides, also between curved segments, without changing the rest of the curve. Radius and Tension in the F9 panel. Poly and Bezier"""
     bl_idname = "etr.curve_toolkit_round_corners"
     bl_label = "Round Corners"
     bl_options = {'REGISTER', 'UNDO'}
@@ -285,7 +305,6 @@ class ETR_OT_curve_toolkit_round_corners(bpy.types.Operator):
         description="Radius of the arcs. It is reduced where it does not fit",
         default=0.1,
         min=0.0001,
-        soft_max=10.0,
         precision=4,
         subtype='DISTANCE',
         unit='LENGTH',
@@ -398,7 +417,7 @@ def _bridge_handles(p0, t0, p1, t1, tension):
 
 
 class ETR_OT_curve_toolkit_bridge_curves(bpy.types.Operator):
-    """Join two selected end points with a Bezier segment that follows the tangent of both curves. The Tension can be changed afterwards in the Adjust Last Operation panel (F9): 0.0 is a straight segment, 1.0 a medium curvature, 2.0 and above sharper and sharper (no upper limit)"""
+    """Join two selected end points with a Bezier segment that follows the tangent of both curves. Tension in the F9 panel (0.0 straight, higher sharper)"""
     bl_idname = "etr.curve_toolkit_bridge_curves"
     bl_label = "Bridge Curves"
     bl_options = {'REGISTER', 'UNDO'}
