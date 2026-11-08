@@ -9,8 +9,9 @@ icons (`etr_curves_toolkit`). Panel location:
 
 The tab holds one panel, *Eterea Curves Toolkit*, with one collapsible
 sub-panel per section: *Create Curves*, *Curve Booleans*, *Shaping Splines*,
-*Utilities*, *Change Origin* and *Global Settings* (the last three start
-collapsed; Global Settings holds the Threshold that several tools share).
+*Utilities*, *Change Origin*, *Global Settings* and *Documentation* (the
+last four start collapsed; Global Settings holds the Threshold that several
+tools share, and Documentation links to this page).
 
 ## Tools
 
@@ -33,7 +34,7 @@ the same order as in the panel.
 
 Five icon buttons that add a simple curve to the scene:
 
-|   | Button | Curve | Shape |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Button | Curve | Shape |
 | :-: | --- | --- | --- |
 | <img src="icons/line.png" width="32" alt=""> | Line / Point | Poly, *Points* points (2 by default), open | A straight line on the X axis, from -Radius to +Radius, with its points evenly spaced. *Points* 1: a single stray point at the center |
 | <img src="icons/bezier.png" width="32" alt=""> | Bezier | Bezier, 2 points, open | The same curve as Blender's *Add > Curve > Bezier*, with the same Aligned handles |
@@ -98,7 +99,7 @@ The second row of *Create Curves*, plus the first button of the third one
 (*Segment & Center*): six icon buttons that draw a
 **Bezier circle**, or an arc of it, from points that are already in the scene.
 
-|   | Button | Points | Active point (picked last) | Circle |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Button | Points | Active point (picked last) | Circle |
 | :-: | --- | --- | --- | --- |
 | <img src="icons/circle_center_point.png" width="32" alt=""> | Circle from Center & Point | 2 | the center | Through the other point |
 | <img src="icons/circle_2_points.png" width="32" alt=""> | Circle from 2 Points | 2 | 6 o'clock | The two points are the ends of a diameter; the other one is at 12 o'clock |
@@ -394,7 +395,7 @@ which all of them share.
 
 2D boolean operations between closed curves, as three icon buttons:
 
-|   | Button | Curves | Result |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Button | Curves | Result |
 | :-: | --- | --- | --- |
 | <img src="icons/union.png" width="32" alt=""> | Union | 2 or more | The union of all of them (order and active object do not matter) |
 | <img src="icons/intersection.png" width="32" alt=""> | Intersection | Exactly 2 | The common area |
@@ -1021,7 +1022,7 @@ four seams (at 12, 3, 6 and 9 o'clock) and you want to remove two of them:
 
 #### <img src="icons/handles_to_axis.png" width="64" alt=""> Handles to Axis (Object and Edit Mode)
 
-*Shaping Splines*. Every Bezier handle that points **almost along an axis**
+*Shaping Splines*, last row: **Handles** *To Axis* / *To Lines*. Every Bezier handle that points **almost along an axis**
 is turned **onto that axis**, keeping its length; the control points do not
 move.
 
@@ -1041,7 +1042,7 @@ move.
 
 #### <img src="icons/handles_to_lines.png" width="64" alt=""> Handles to Lines (Object and Edit Mode)
 
-*Shaping Splines*, under Handles to Axis. A construction aid: the **handles** of Bezier
+*Shaping Splines*, next to Handles to Axis. A construction aid: the **handles** of Bezier
 splines drawn as **Poly lines**.
 
 - **Object Mode**: every handle of every Bezier spline of the selected curves,
@@ -1058,14 +1059,15 @@ splines drawn as **Poly lines**.
 ### Utilities
 
 Closed by default. In the panel they go from whole splines to points: **Select All by Type** and
-**Separate All Selected**; **Subdivide**, with **Simplify** and **Dissolve**
-under it; **Set First Point** and **Invert Direction**; the pairs and the
-merges (see *Pairs and Merges*); and last, **Resolution** with **Set All**, and
-**Cyclic** with **Toggle All** (see *Resolution and Cyclic*).
+**Separate All Selected**; **Subdivide**, **Simplify** and **Dissolve** on one
+row; **Set First Point** and **Invert Direction** on another; the pairs on
+one row (**Pair** *Snap* / *Merge* / *Swap*) and the merges (see *Pairs and
+Merges*); and last, **Resolution** with **Set All**, and **Cyclic** with
+**Toggle All** (see *Resolution and Cyclic*).
 
 #### <img src="icons/utilities.png" width="64" alt=""> Splines and Points
 
-|   | Tool | Where | What it does |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Tool | Where | What it does |
 | :-: | --- | --- | --- |
 | <img src="icons/select_polys.png" width="32" alt=""> | Select All by Type > Polys | Edit | Selects every **Poly** spline, **and only those**, in every curve being edited. *Extend* (F9) keeps what was already selected. |
 | <img src="icons/select_beziers.png" width="32" alt=""> | Select All by Type > Beziers | Edit | The same, for the **Bezier** splines. |
@@ -1090,10 +1092,11 @@ pick whole splines, then send them to objects of their own if needed.
 Blender can merge the vertices of a mesh but not the control points of a curve.
 *Merge Pair* and *Merge by Distance* do, each of them only ever welding points
 that can be welded without tearing a spline apart. *Snap Pair* and *Swap Pair*,
-on either side of *Merge Pair* in the panel, only **move** two points, so they
+on either side of *Merge Pair* in the panel (the row **Pair** *Snap* /
+*Merge* / *Swap*), only **move** two points, so they
 take any two.
 
-|   | Tool | What it does |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Tool | What it does |
 | :-: | --- | --- |
 | <img src="icons/snap_pair.png" width="32" alt=""> | Snap Pair | Puts **two selected points at the same place** without welding them: *Snap* **At Center** (default), **At Point A** or **At Point B**. Since nothing is welded, **any** two points will do: start, middle or end points, of open or closed splines, of the same spline, of two splines or of two curves, of any type. Also **two vertices of a mesh** (or of two meshes). |
 | <img src="icons/merge_pair.png" width="32" alt=""> | Merge Pair | Welds **two selected control points** into one, **however far apart they are** (no Threshold). *Merge*: **At Center** (default), **At Point A** or **At Point B**. Any curve type (Poly, Bezier and NURBS; 2D and 3D). |
@@ -1157,7 +1160,7 @@ The *Threshold* these merges use is in **Global Settings** (see below).
 
 The last two rows of Utilities.
 
-|   | Tool | Where | What it does |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Tool | Where | What it does |
 | :-: | --- | --- | --- |
 | <img src="icons/set_resolution.png" width="32" alt=""> | Set Resolution | Object / Edit | Gives the same *Resolution U* (the points Blender computes between every pair of control points) to many splines at once. On a row of its own, the field next to **Set All** reads and writes the **curve** in Object Mode and the **active spline** in Edit Mode, when one has really been made active: the same two values as *Object Data > Shape* and *Sidebar > Item*. **Set All** then spreads that value: in Object Mode to every spline of all the selected curves and to their curve data; in Edit Mode to every spline with a selected point or handle, leaving the curve data with its own value. The field is a property of the toolkit that passes the value through, not the native one, so that **Backspace over it gives 12**, the resolution of a new curve, whichever of the two it is pointing at (see the note below). Any curve type. |
 
@@ -1224,6 +1227,11 @@ the settings that tools of several sections share:
   spline, have to be to count as the same place. Used by Merge by Distance,
   Join & Merge, Remove Doubles, Select All by Type > Strays and Remove Strays
   (Utilities) and by Split at Stray Points (Curve Booleans).
+
+### Documentation
+
+Closed by default, the last sub-panel. Its **Open Online Documentation**
+button opens this page in the web browser.
 
 ## Notes
 

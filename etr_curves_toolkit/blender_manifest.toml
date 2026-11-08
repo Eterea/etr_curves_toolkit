@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "etr_curves_toolkit"
-version = "0.24.0"
+version = "0.25.0"
 name = "Curve Toolkit"
 tagline = "Tools to refine and operate on Poly, Bezier and NURBS curves"
 maintainer = "Cristobal Vila <etereaestudios@gmail.com>"

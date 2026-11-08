@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.25.0
+
+- **More compact panel**. *Utilities*: **Subdivide / Simplify / Dissolve** on
+  one row, **Set First Point / Invert Direction** on another, a little
+  apart, and the pairs on one row headed by a label, **Pair** *Snap* /
+  *Merge* / *Swap*. *Shaping Splines*: **Handles** *To Axis* / *To Lines*
+  (text only, without icons). The labels take only the width of their text, so the
+  buttons fill the rest of the row.
+  The operators keep their full names (Snap Pair, Handles to Axis...) in the
+  F9 panel, F3 search and tooltips.
+- New **Documentation** sub-panel, the last one and closed by default, with
+  an **Open Online Documentation** button (same Help icon as in the Eterea
+  Blender Tools kit) that opens the full documentation on GitHub.
+- Both READMEs: the small icons of the tables keep their **32 px** on GitHub.
+  When the other columns held long texts, GitHub squeezed the icon column
+  until the icons were barely visible (images there have no minimum width);
+  the empty header of that column now holds non-breaking spaces, which cannot
+  be squeezed.
+
 ## v0.24.0
 
 - **Symmetrize**: when the selected curves have nothing on the side that is

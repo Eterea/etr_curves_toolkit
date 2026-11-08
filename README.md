@@ -22,7 +22,7 @@ Panel location: **3D Viewport > Sidebar (N) > Eterea Curves**.
 
 In the same order as in the panel.
 
-| | Group | Tool | Status |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Group | Tool | Status |
 | :-: | --- | --- | --- |
 | <img src="icons/create_curves.png" width="32" alt=""> | Create Curves | Line / Point, Bezier, Rectangle, Polygon, Circle | Done (new object in Object Mode, new spline in Edit Mode; Line / Point with a number of Points, 1 = a single stray point) |
 | <img src="icons/circle_3_points.png" width="32" alt=""> | Create Curves | Circle from Center & Point, from 2 Points, from 3 Points, from Segment & Center, Inscribed in a Triangle, Tangent to 2 Segments | Done (from mesh vertices: new curve object; from curve points: new spline; plane from the view; Goal, Oriented, Normal Rotation, Arc and Add Helper Points options) |
@@ -54,7 +54,7 @@ In the same order as in the panel.
 | <img src="icons/set_resolution.png" width="32" alt=""> | Utilities | Set Resolution, Cyclic | Done |
 | <img src="icons/change_origin.png" width="32" alt=""> | Change Origin | To World Origin, To 3D Cursor, To Selected Point (Edit Mode), In, Mid, Out, Geo (bounds center) | Done (In / Mid / Out / Geo also in Edit Mode, on the selected spline or segment) |
 
-The **Threshold** shared by several tools is in **Global Settings**, at the bottom of the panel.
+The **Threshold** shared by several tools is in **Global Settings**, near the bottom of the panel. The last sub-panel, **Documentation**, opens the full documentation online.
 
 Full documentation of every tool: [etr_curves_toolkit_docs/README.md](etr_curves_toolkit_docs/README.md)
 Version history: [etr_curves_toolkit_docs/CHANGELOG.md](etr_curves_toolkit_docs/CHANGELOG.md)

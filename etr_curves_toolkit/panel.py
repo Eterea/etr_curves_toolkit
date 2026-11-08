@@ -13,13 +13,14 @@ icon buttons: the primitives, the circles from points, the construction
 lines (circle from a segment, tangents, perpendicular) and the construction
 points; Shaping Splines holds the tools that reshape a spline: Round, Bridge,
 Arcs to Corners, Offset, Extend, Slide Point, Slice and Undo Slice, and last
-Handles to Axis and Handles to Lines; Utilities goes from whole splines
-(Select All by Type, Separate) to points (Subdivide, Simplify, Dissolve, Set
-First Point, Invert Direction, the pairs and the merges) and ends with
-Resolution and Cyclic), each with its own native collapse arrow
-(bl_parent_id), plus Global Settings at the bottom (the Threshold that tools
-of several sections share). Utilities, Change Origin and Global Settings
-start collapsed.
+the Handles row (To Axis, To Lines); Utilities goes from whole splines
+(Select All by Type, Separate) to points (Subdivide / Simplify / Dissolve on
+one row, Set First Point / Invert Direction on another, the Pair row with
+Snap / Merge / Swap, and the merges) and ends with Resolution and Cyclic),
+each with its own native collapse arrow (bl_parent_id), plus Global Settings
+(the Threshold that tools of several sections share) and Documentation (a
+link to the online docs) at the bottom. Utilities, Change Origin, Global
+Settings and Documentation start collapsed.
 
 PANEL_CATEGORY is kept as its own constant (rather than hardcoded in every
 panel class) so the sidebar tab can be renamed in one place if needed.
@@ -27,12 +28,19 @@ panel class) so the sidebar tab can be renamed in one place if needed.
 
 from pathlib import Path
 
+import blf
 import bpy
 import bpy.utils.previews
 
 from .context_utils import resolution_source
 
 PANEL_CATEGORY = "Eterea Curves"
+
+#: Full documentation on GitHub (rendered Markdown), opened by the
+#: Documentation sub-panel.
+DOCUMENTATION_URL = (
+    "https://github.com/Eterea/etr_curves_toolkit/blob/main/etr_curves_toolkit_docs/README.md"
+)
 
 _ICONS_DIR = Path(__file__).parent / "icons"
 _icons = None  # bpy.utils.previews collection
@@ -82,6 +90,48 @@ def _equal_slots(layout, count, scale_y=None):
         rest = split.column(align=True)
     slots.append(rest)
     return slots
+
+
+#: Extra room for a label of a labeled row, in UI units (the padding Blender
+#: draws around a label, plus a small safety margin).
+_LABEL_PADDING = 1.0
+
+#: Width of the Sidebar that is not available to the rows of a sub-panel
+#: (panel margins and the indentation of a sub-panel), in UI units. Erring on
+#: the large side only makes the label a little wider, never truncated.
+_PANEL_MARGINS = 2.0
+
+
+def _labeled_row(layout, context, text):
+    """A row whose first part is a plain label ("Pair", "Handles") and the
+    rest a row of aligned buttons, which is returned. The label is not a
+    button: it just names what the buttons after it have in common, so their
+    own texts can be shorter.
+
+    Blender has no fixed-width layout item: inside a row, ui_units_x is only a
+    weight shared with the buttons, so a narrow Sidebar truncated the label.
+    Instead, the real width of the text is measured with the UI font (blf) and
+    turned into the factor of a split, using the width of the Sidebar. The
+    label takes just what its text needs and the buttons all the rest.
+    """
+    split = layout.split(factor=_label_factor(context, text))
+    split.label(text=text)
+    return split.row(align=True)
+
+
+def _label_factor(context, text):
+    """Share of the row a label needs, from the width of its text."""
+    try:
+        scale = context.preferences.system.ui_scale
+        unit = 20.0 * scale                       # one UI unit, in pixels
+        points = context.preferences.ui_styles[0].widget.points
+        blf.size(0, points * scale)
+        text_width = blf.dimensions(0, text)[0]
+        available = context.region.width - _PANEL_MARGINS * unit
+        factor = (text_width + _LABEL_PADDING * unit) / max(available, 1.0)
+    except (AttributeError, IndexError, TypeError):
+        return 0.3                                # no region or no style
+    return min(max(factor, 0.05), 0.5)
 
 
 class ETR_PT_curve_toolkit(bpy.types.Panel):
@@ -228,12 +278,15 @@ class ETR_PT_curve_toolkit_rounds(bpy.types.Panel):
         _operator(row, "etr.curve_toolkit_slice", "Slice", "slice")
         row.operator("etr.curve_toolkit_undo_slice", text="Undo Slice")
 
-        # The handles, last: onto the axes, or drawn as lines.
+        # The handles, last: onto the axes, or drawn as lines (v0.25.0: one
+        # row, "Handles" as a label in front of the two buttons).
         col = layout.column(align=True)
         col.separator(factor=0.5)
-        _operator(col, "etr.curve_toolkit_handles_to_axis", "Handles to Axis", "handles_to_axis")
-        _operator(col, "etr.curve_toolkit_handles_to_lines", "Handles to Lines",
-                  "handles_to_lines")
+        # Text only: their icons (handles_to_axis, handles_to_lines) stay in
+        # the icons folder for a later layout of the panel.
+        row = _labeled_row(col, context, "Handles")
+        row.operator("etr.curve_toolkit_handles_to_axis", text="To Axis")
+        row.operator("etr.curve_toolkit_handles_to_lines", text="To Lines")
 
 
 class ETR_PT_curve_toolkit_utilities(bpy.types.Panel):
@@ -259,26 +312,29 @@ class ETR_PT_curve_toolkit_utilities(bpy.types.Panel):
         col.operator("etr.curve_toolkit_separate")
 
         # Blender's own Subdivide, Decimate Curve and Dissolve Vertices
-        # (Edit Mode). Simplify and Dissolve both take points away, so they go
-        # together under Subdivide, which puts them in.
+        # (Edit Mode), on one row: Subdivide puts points in, Simplify and
+        # Dissolve take them away.
         col = layout.column(align=True)
-        col.operator("curve.subdivide")
         row = col.row(align=True)
+        row.operator("curve.subdivide", text="Subdivide")
         row.operator("curve.decimate", text="Simplify")
         row.operator("curve.dissolve_verts", text="Dissolve")
 
-        # The order of the points.
+        # The order of the points, on one row, a little apart from the row
+        # above.
         col = layout.column(align=True)
-        col.operator("etr.curve_toolkit_set_first_point")
-        col.operator("etr.curve_toolkit_invert_direction")
+        row = col.row(align=True)
+        row.operator("etr.curve_toolkit_set_first_point")
+        row.operator("etr.curve_toolkit_invert_direction")
 
         # The pairs: two points, wherever they are, so the Threshold (Global
         # Settings) does not reach them. Snap and Swap only move the points;
-        # Merge welds them.
+        # Merge welds them. One row, "Pair" as a label in front.
         col = layout.column(align=True)
-        col.operator("etr.curve_toolkit_snap_pair")
-        col.operator("etr.curve_toolkit_merge_pair")
-        col.operator("etr.curve_toolkit_swap_pair")
+        row = _labeled_row(col, context, "Pair")
+        row.operator("etr.curve_toolkit_snap_pair", text="Snap")
+        row.operator("etr.curve_toolkit_merge_pair", text="Merge")
+        row.operator("etr.curve_toolkit_swap_pair", text="Swap")
 
         # The merges that use the Threshold.
         col = layout.column(align=True)
@@ -351,6 +407,25 @@ class ETR_PT_curve_toolkit_global(bpy.types.Panel):
         col.prop(settings, "merge_threshold")
 
 
+class ETR_PT_curve_toolkit_documentation(bpy.types.Panel):
+    """Last sub-panel: a link to the online documentation, which is not part
+    of the installed Extension (it lives on GitHub, in the
+    etr_curves_toolkit_docs folder of the repository). It uses Blender's own
+    wm.url_open operator and the same HELP icon as the Documentation panel of
+    the Eterea Blender Tools kit."""
+    bl_idname = "ETR_PT_curve_toolkit_documentation"
+    bl_parent_id = "ETR_PT_curve_toolkit"
+    bl_label = "Documentation"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        self.layout.operator(
+            "wm.url_open", text="Open Online Documentation", icon='HELP'
+        ).url = DOCUMENTATION_URL
+
+
 classes = (
     ETR_PT_curve_toolkit,
     ETR_PT_curve_toolkit_primitives,
@@ -359,6 +434,7 @@ classes = (
     ETR_PT_curve_toolkit_utilities,
     ETR_PT_curve_toolkit_origin,
     ETR_PT_curve_toolkit_global,
+    ETR_PT_curve_toolkit_documentation,
 )
 
 
