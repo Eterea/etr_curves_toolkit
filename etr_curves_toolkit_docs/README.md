@@ -1,7 +1,7 @@
-# Curve Toolkit
+# Eterea Curves Toolkit
 
 Tools to create, refine and operate on curves (Poly, Bezier and NURBS) for
-Blender 5.2.
+Blender 5.2 and above.
 
 Independent Blender Extension, with its own installation, documentation and
 icons (`etr_curves_toolkit`). Panel location:
