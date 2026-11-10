@@ -59,6 +59,14 @@ The **Threshold** shared by several tools is in **Global Settings**, near the bo
 Full documentation of every tool: [etr_curves_toolkit_docs/README.md](etr_curves_toolkit_docs/README.md)
 Version history: [etr_curves_toolkit_docs/CHANGELOG.md](etr_curves_toolkit_docs/CHANGELOG.md)
 
+## Feedback and issues
+
+Found a bug or have an idea? Please open an [issue](../../issues).
+
+## More resources
+
+More Blender resources, courses and tools: [etereaestudios.com/resources/blender-resources](https://etereaestudios.com/resources/blender-resources/)
+
 ## License
 
 GPL-3.0-or-later. Copyright (C) 2026 Cristobal Vila (etereaestudios.com)

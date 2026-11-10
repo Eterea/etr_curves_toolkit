@@ -13,6 +13,12 @@ sub-panel per section: *Create Curves*, *Curve Booleans*, *Shaping Splines*,
 last four start collapsed; Global Settings holds the Threshold that several
 tools share, and Documentation links to this page).
 
+---
+
+ 🟢 [Go to Blender Resources at etereaestudios.com](https://etereaestudios.com/resources/blender-resources/)
+
+---
+
 ## Tools
 
 ### Create Curves
