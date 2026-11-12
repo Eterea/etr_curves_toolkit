@@ -2,11 +2,12 @@
 # Copyright (C) 2026 Cristobal Vila (etereaestudios.com)
 
 """
-Curve Toolkit - Symmetrize (Object Mode)
+Curve Toolkit - Symmetrize Split (Object Mode and Edit Mode)
 
 Mirror one side of the selected curves onto the other side and weld them on
-the axis, as a new curve: the side that is kept is copied, mirrored, and the
-other side is replaced by that copy.
+the axis: the side that is kept is copied, mirrored, and the other side is
+replaced by that copy. It is one more kind of Split: what crosses the axis is
+cut there.
 
 Everything is relative to the view, which must be an orthographic axis view
 (Top, Bottom, Front, Back, Right or Left; not a perspective or camera view):
@@ -27,10 +28,10 @@ Everything is relative to the view, which must be an orthographic axis view
     vertical line of the screen through it (Left / Right directions) or the
     horizontal one (Top / Bottom).
 
-Closed splines are one region, even-odd, the way Blender fills them (a shape
-with holes): the part of the region on the kept side is joined with its
-mirror image, so the outline that crossed the axis becomes one symmetric
-outline, welded where it meets the axis. Open splines are cut where they
+Closed splines are taken one by one: the part of each one on the kept side
+is joined with its mirror image, so an outline that crossed the axis becomes
+one symmetric outline, welded where it meets the axis. Two closed splines
+that overlap stay two shapes; a hole inside a shape comes out as a hole. Open splines are cut where they
 cross the axis; every piece on the kept side gets its mirror image, welded to
 it where the piece touches the axis (a piece with both ends on the axis
 becomes a closed spline). A piece that does not reach the axis stays as it
@@ -40,10 +41,13 @@ The curves must be flat, in a plane facing the view. Poly and Bezier
 splines (Poly when every spline is Poly, otherwise Bezier). Points welded on
 the axis get Free handles, so Blender does not realign them.
 
-Each selected curve gives a new curve object with its look; the originals
-are kept as backups, hidden or placed in "Curve Boolean Sources", and the
-results go into "Curve Boolean Results", with the two options of the Curve
-Booleans panel. The geometry work is done by curve_engine.py.
+Object Mode: each selected curve gives a new curve object (Sym_01,
+Sym_02...) with its look; the originals are kept as backups, hidden or placed
+in "Curve Boolean Sources", and the results go into "Curve Boolean Results",
+with the options of the Booleans & Splits panel. Edit Mode: the selected
+splines of one curve (one point of each is enough) are replaced by the
+result, selected, in that curve; with "Backup Splines in Edit Mode" a copy of
+them is kept as a hidden object. The geometry work is done by curve_engine.py.
 """
 
 import bpy
@@ -57,13 +61,21 @@ from . import spline_data as sd
 from .booleans import segments_to_spline, spline_segments
 from .circles import VIEWS
 from .context_utils import (
+    EDIT_MODE,
+    backup_splines,
+    edit_scope,
     finish_sources_and_results,
+    has_active_curve,
     new_curve_object,
     selected_curves,
     world_matrix,
+    write_edit_result,
 )
 
-TITLE = "Symmetrize"
+TITLE = "Symmetrize Split"
+
+#: Base name of the results (Sym_01, Sym_02...).
+RESULT_NAME = "Sym"
 
 #: 2 x 2 maps from the screen (x right, y up) to a frame where the side that
 #: is kept is x < 0 and the mirror is x -> -x. They are orthogonal, so the
@@ -274,10 +286,13 @@ def _free_on_axis(data, near):
 # One object
 # -----------------------------------------------------------------------------
 
-def symmetrize_object(obj, frame):
-    """SplineData (local space of `obj`) of the symmetric curve, or Empty."""
+def symmetrize_object(obj, frame, datas=None):
+    """SplineData (local space of `obj`) of the symmetric curve, or Empty.
+
+    datas: the splines to mirror (by default all of them)."""
     mw = world_matrix(obj)
-    datas = sd.read_all(obj.data)
+    if datas is None:
+        datas = sd.read_all(obj.data)
     if not datas:
         raise Empty()
     for d in datas:
@@ -297,13 +312,15 @@ def symmetrize_object(obj, frame):
     near = 10.0 * tol.join
 
     kind = 'POLY' if all(d.kind == 'POLY' for d in flat) else 'BEZIER'
-    settings = dict(flat[0].settings)
     results = []
 
-    loops = [spline_segments(d)[0] for d in flat if d.cyclic and len(d.points) > 1]
-    if loops:
-        for loop in symmetric_region(loops, tol, reach):
-            results.append(segments_to_spline(loop, True, kind, settings))
+    # Every closed spline on its own: two splines that overlap stay two
+    # shapes (each one mirrored and welded), as they were drawn. Nested
+    # splines (a shape with a hole) come out nested too.
+    for d in flat:
+        if d.cyclic and len(d.points) > 1:
+            for loop in symmetric_region([spline_segments(d)[0]], tol, reach):
+                results.append(segments_to_spline(loop, True, kind, d.settings))
 
     for d in flat:
         if d.cyclic and len(d.points) > 1:
@@ -348,9 +365,9 @@ def _single(data, point):
 # -----------------------------------------------------------------------------
 
 class ETR_OT_curve_toolkit_symmetrize(bpy.types.Operator):
-    """Mirror one side of the selected curves onto the other and weld them on the axis, as new curves (the originals are kept as backups). Relative to the view: works in an orthographic Top, Front, Right... view. Direction and Center in the F9 panel. Poly and Bezier, open or closed. Object Mode"""
+    """Mirror one side of the selected curves onto the other and weld them on the axis. Object Mode: new curves, the originals kept as backups. Edit Mode: the selected splines of one curve, in that curve. In an orthographic Top, Front, Right... view. Poly and Bezier"""
     bl_idname = "etr.curve_toolkit_symmetrize"
-    bl_label = "Symmetrize"
+    bl_label = "Symmetrize Split"
     bl_options = {'REGISTER', 'UNDO'}
 
     direction: EnumProperty(
@@ -393,7 +410,10 @@ class ETR_OT_curve_toolkit_symmetrize(bpy.types.Operator):
     def poll(cls, context):
         if context.mode == 'OBJECT' and selected_curves(context):
             return True
-        cls.poll_message_set("Select curves (Object Mode)")
+        if context.mode == EDIT_MODE and has_active_curve(context):
+            return True
+        cls.poll_message_set("Select curves (Object Mode), or splines of one curve (Edit "
+                             "Mode)")
         return False
 
     def draw(self, context):
@@ -424,6 +444,9 @@ class ETR_OT_curve_toolkit_symmetrize(bpy.types.Operator):
                                      "camera view). Pick the View in the F9 panel")
             return {'FINISHED'}
 
+        if context.mode == EDIT_MODE:
+            return self._edit(context)
+
         objs = selected_curves(context)
         done, empty = [], []
         try:
@@ -438,11 +461,10 @@ class ETR_OT_curve_toolkit_symmetrize(bpy.types.Operator):
             return {'CANCELLED'}
 
         if not done:
-            self.report({'WARNING'}, f"{TITLE}: nothing mirrored, the curves have nothing on "
-                                     "the side that is kept. Change the Direction in the F9 "
-                                     "panel")
+            self._nothing()
             return {'FINISHED'}
-        results = [(new_curve_object(context, obj, datas, TITLE), obj) for obj, datas in done]
+        results = [(new_curve_object(context, obj, datas, RESULT_NAME, numbered=True), obj)
+                   for obj, datas in done]
         finish_sources_and_results(context, [obj for obj, _ in done], results)
         if empty:
             names = ", ".join(f"'{o.name}'" for o in empty)
@@ -450,6 +472,38 @@ class ETR_OT_curve_toolkit_symmetrize(bpy.types.Operator):
                                      f"(nothing on the side that is kept): {names}")
         else:
             self.report({'INFO'}, f"{TITLE}: {len(results)} curve(s)")
+        return {'FINISHED'}
+
+    def _nothing(self):
+        self.report({'WARNING'}, f"{TITLE}: nothing mirrored, the curves have nothing on "
+                                 "the side that is kept. Change the Direction in the F9 "
+                                 "panel")
+
+    def _edit(self, context):
+        """The selected splines of one curve are replaced by their symmetric
+        version, in that curve (a backup of them with "Backup Splines in Edit
+        Mode")."""
+        from .booleans import Fail as PickFail, picked_in_edit
+
+        try:
+            with edit_scope(context) as objs:
+                obj, datas, picked = picked_in_edit(objs, TITLE)
+                frame = Frame(self.view, self.direction, self._center(context, obj))
+                try:
+                    results = symmetrize_object(obj, frame, [datas[i] for i in picked])
+                except Empty:
+                    # Nothing changed, but it finishes, so the F9 panel opens.
+                    self._nothing()
+                    return {'FINISHED'}
+                backup_splines(context, obj, [datas[i] for i in picked])
+                write_edit_result(obj, datas, picked, results)
+        except PickFail as error:
+            self.report({'ERROR'}, str(error))
+            return {'CANCELLED'}
+        except Fail as error:
+            self.report({'ERROR'}, f"{TITLE}: {error}")
+            return {'CANCELLED'}
+        self.report({'INFO'}, f"{TITLE}: {len(results)} spline(s)")
         return {'FINISHED'}
 
     def _center(self, context, obj):

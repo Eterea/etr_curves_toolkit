@@ -5,23 +5,29 @@
 Curve Toolkit - Perpendicular from Point
 
 Edit Mode of a curve: for every selected control point of a Poly or Bezier
-spline, a new straight segment that starts at the point and leaves the curve
-perpendicularly. It is a Poly spline of its own (not connected to the curve),
-whatever the type of the curve.
+spline, a new straight segment through the point, perpendicular to the
+curve. It is a Poly spline of its own (not connected to the curve), whatever
+the type of the curve.
 
   - A smooth point (aligned handles, or a Poly point between two segments in
-    line) gets the perpendicular to the curve. A positive Length goes to the
-    left of the direction of the curve, as seen from the view.
+    line) gets the perpendicular to the curve. The segment goes to the left
+    of the direction of the curve, as seen from the view.
   - A corner gets the bisector of the corner instead (of its two handles, on
-    a Bezier spline; of its two segments, on a Poly one). A positive Length
-    goes outwards, away from the inside of the corner.
+    a Bezier spline; of its two segments, on a Poly one). The segment goes
+    outwards, away from the inside of the corner.
   - An end point of an open spline gets the perpendicular to its only side.
+
+Options (F9):
+  - Length (positive): it starts at a quarter of the length of the spline of
+    the first selected point.
+  - Center (0 to 1, 0.5 by default): where the segment sits on the curve. At
+    0 it starts at the point (its IN end on the curve) and goes the way
+    described above; at 1 it ends at the point (its OUT end on the curve), on
+    the other side; at 0.5 it is centered on the curve.
 
 The segment stays in the plane of the view, as the Circles from Points do:
 Top/Bottom XY, Front/Back XZ, Right/Left YZ, a free perspective and the
-camera view as Top (the View can be changed in the F9 panel). Length (F9)
-can be negative, to go to the other side; it starts at a quarter of the
-length of the spline of the first selected point.
+camera view as Top (the View can be changed in the F9 panel).
 """
 
 import bpy
@@ -117,18 +123,30 @@ def straight(a, b):
 
 
 class ETR_OT_curve_toolkit_perpendicular(bpy.types.Operator):
-    """Draw a straight segment from every selected point, perpendicular to the curve (or along the bisector of a corner), in the plane of the view. Length in the F9 panel, negative for the other side"""
+    """Draw a straight segment at every selected point, perpendicular to the curve (or along the bisector of a corner), in the plane of the view. Length and Center (where it sits on the curve) in the F9 panel"""
     bl_idname = "etr.curve_toolkit_perpendicular"
     bl_label = "Perpendicular from Point"
     bl_options = {'REGISTER', 'UNDO'}
 
     length: FloatProperty(
         name="Length",
-        description="Length of the segment. Negative goes to the other side of the curve. "
-                    "It starts at a quarter of the length of the spline",
+        description="Length of the segment. It starts at a quarter of the length of the "
+                    "spline",
         default=1.0,
+        min=0.0,
         subtype='DISTANCE',
         unit='LENGTH',
+        options={'SKIP_SAVE'},
+    )
+    center: FloatProperty(
+        name="Center",
+        description="Where the segment sits on the curve: 0 starts at the curve (its IN "
+                    "end is on it), 1 ends at it (its OUT end is on it, so the segment is "
+                    "on the other side), 0.5 is centered on the curve",
+        default=0.5,
+        min=0.0,
+        max=1.0,
+        subtype='FACTOR',
         options={'SKIP_SAVE'},
     )
     view: EnumProperty(
@@ -155,6 +173,7 @@ class ETR_OT_curve_toolkit_perpendicular(bpy.types.Operator):
         layout.use_property_split = True
         layout.use_property_decorate = False
         layout.prop(self, "length")
+        layout.prop(self, "center")
         layout.separator()
         layout.prop(self, "view")
 
@@ -198,14 +217,17 @@ class ETR_OT_curve_toolkit_perpendicular(bpy.types.Operator):
                            "(not seen edge-on from the view)")
             if not props_set(self, "length"):
                 self.length = (first_length or 4.0) / 4.0
-            if abs(self.length) < 1e-9:
+            if self.length < 1e-9:
                 raise Fail("the Length cannot be 0")
             for o in objs:
                 _deselect_all(o.data)
             for obj, co, d in jobs:
-                end = geo.add(co, geo.mul(d, self.length))
+                # From the curve by default (Center 0), across it at 0.5, and
+                # ending on it at 1.
+                start = geo.add(co, geo.mul(d, -self.center * self.length))
+                end = geo.add(co, geo.mul(d, (1.0 - self.center) * self.length))
                 to_local = world_matrix(obj).inverted()
-                a = tuple(to_local @ Vector(co))
+                a = tuple(to_local @ Vector(start))
                 b = tuple(to_local @ Vector(end))
                 sd.write_spline(obj.data, straight(a, b))
                 made += 1

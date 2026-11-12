@@ -61,6 +61,7 @@ from .context_utils import (
     has_active_curve,
     link_like,
     selected_curves,
+    unique_name,
     world_matrix,
 )
 
@@ -108,6 +109,7 @@ def _points_object(context, name, world_points):
     """A new curve object at the world origin with a stray point at every
     world point. Linked next to the active curve, selected and active, and
     left in Edit Mode: stray points cannot be seen in Object Mode."""
+    name = unique_name(name)
     curve = bpy.data.curves.new(name, 'CURVE')
     curve.dimensions = '3D'
     for co in world_points:

@@ -9,10 +9,12 @@ noted:
 
   - Set First Point   (Edit Mode)   selected point becomes point 0.
   - Invert Direction  (Object/Edit) reverse the order of the points.
-  - Split at Control Points (Object/Edit) every segment goes to its own object.
+  - Split at Control Points (Object/Edit) Object Mode: every segment goes to
+                                    its own object. Edit Mode: the splines are
+                                    cut at the selected points, in their curve.
                                     Poly and Bezier only. Its button is drawn
                                     with the Splits, and it shares their
-                                    Sources / Results collection options.
+                                    Backup / Sources / Results options.
   - Separate All Selected (Edit)    every selected spline goes to a new curve
                                     object of its own, leaving the curve it
                                     was in. Ends in Object Mode.
@@ -23,7 +25,9 @@ noted:
   - Remove Strays     (Object/Edit) delete the splines with a single point and
                                     those shorter than the Threshold.
   - Select Strays     (Edit)        select those stray splines, and only those.
-  - Select by Type    (Edit)        select every Poly, Bezier or NURBS spline.
+  - Select by Type    (Edit)        select every Poly, Bezier or NURBS spline
+                                    (stray points left out), or the strays.
+  - Set Dimensions    (Object/Edit) 2D or 3D for every selected curve.
   - Set Resolution    (Object/Edit) the same Resolution U for many splines.
   - Change Origin     (Object/Edit) origin to curve start / midpoint / end /
                                     bounds center. Edit Mode: of the selected
@@ -45,6 +49,7 @@ from . import geometry as geo
 from . import spline_data as sd
 from .context_utils import (
     EDIT_MODE,
+    backup_splines,
     curves_in_edit_mode,
     edit_scope,
     finish_sources_and_results,
@@ -54,6 +59,7 @@ from .context_utils import (
     selected_curves,
     world_distance,
     world_matrix,
+    write_edit_result,
 )
 
 
@@ -200,7 +206,7 @@ def _make_piece(data, start, stop):
 
 
 class ETR_OT_curve_toolkit_split_at_points(bpy.types.Operator):
-    """Cut the curve at its control points: every segment becomes a new object. The original is kept, hidden. Poly and Bezier only"""
+    """Cut the curve at its control points. Object Mode: every segment becomes a new object and the original is kept, hidden. Edit Mode: the splines are cut at the selected points, in the same curve (a backup only with Backup Splines in Edit Mode). Poly and Bezier only"""
     bl_idname = "etr.curve_toolkit_split_at_points"
     bl_label = "Split at Control Points"
     bl_options = {'REGISTER', 'UNDO'}
@@ -209,68 +215,68 @@ class ETR_OT_curve_toolkit_split_at_points(bpy.types.Operator):
 
     def execute(self, context):
         in_edit = context.mode == EDIT_MODE
-        active = context.active_object
-
-        targets = (
-            [o for o in context.objects_in_mode_unique_data if o.type == 'CURVE']
-            if in_edit else selected_curves(context)
-        )
+        targets = curves_in_edit_mode(context) if in_edit else selected_curves(context)
         for obj in targets:
             if any(s.type == 'NURBS' for s in obj.data.splines):
                 self.report({'ERROR'}, f"'{obj.name}' has NURBS splines: Split at Control Points works only with Poly and Bezier curves")
                 return {'CANCELLED'}
+        if in_edit:
+            return self._edit(context)
+        return self._object(context, targets)
 
+    def _object(self, context, objs):
+        active = context.active_object
         created = []
-        scope = edit_scope(context, reenter=False) if in_edit else _null_scope(targets)
-        with scope as objs:
-            counter = 0
-            for obj in objs:
-                pieces_data = []
-                for d in sd.read_all(obj.data):
-                    n = len(d.points)
-                    if in_edit:
-                        cuts = [k for k, p in enumerate(d.points) if p.select]
-                        if not cuts:
-                            continue
-                    else:
-                        cuts = list(range(n))
-                    for a, b in _piece_indices(n, d.cyclic, cuts):
-                        if b > a:
-                            pieces_data.append(_make_piece(d, a, b))
-                if not pieces_data:
-                    continue
-                new_objs = []
-                for piece in pieces_data:
-                    counter += 1
-                    new_objs.append(new_curve_object(context, obj, [piece], f"Split_{counter:02d}"))
-                created.append((obj, new_objs))
-
-            if not created:
-                self.report({'WARNING'}, "Nothing to split")
-                if in_edit:
-                    bpy.ops.object.mode_set(mode='EDIT')
-                return {'CANCELLED'}
-
-            sources = [obj for obj, _ in created]
-            results = [(new_obj, obj) for obj, new_objs in created for new_obj in new_objs]
-            anchor = active if active in sources else sources[0]
-            finish_sources_and_results(context, sources, results, anchor)
-
+        for obj in objs:
+            pieces = []
+            for d in sd.read_all(obj.data):
+                n = len(d.points)
+                for a, b in _piece_indices(n, d.cyclic, list(range(n))):
+                    if b > a:
+                        pieces.append(_make_piece(d, a, b))
+            if pieces:
+                created.append((obj, [new_curve_object(context, obj, [piece], "Split",
+                                                       numbered=True) for piece in pieces]))
+        if not created:
+            self.report({'WARNING'}, "Nothing to split")
+            return {'CANCELLED'}
+        sources = [obj for obj, _ in created]
+        results = [(new_obj, obj) for obj, new_objs in created for new_obj in new_objs]
+        anchor = active if active in sources else sources[0]
+        finish_sources_and_results(context, sources, results, anchor)
         self.report({'INFO'}, f"Created {len(results)} segment(s)")
         return {'FINISHED'}
 
-
-class _null_scope:
-    """Stand-in for edit_scope() when we are already in Object Mode."""
-
-    def __init__(self, objs):
-        self.objs = objs
-
-    def __enter__(self):
-        return self.objs
-
-    def __exit__(self, *exc):
-        return False
+    def _edit(self, context):
+        """The splines with selected control points are cut there, in their
+        own curve; the pieces are left selected and the Edit Mode is kept."""
+        count = 0
+        with edit_scope(context) as objs:
+            for obj in objs:
+                datas = sd.read_all(obj.data)
+                changed, pieces = [], []
+                for i, d in enumerate(datas):
+                    cuts = [k for k, p in enumerate(d.points) if p.select]
+                    if not cuts or len(d.points) < 2:
+                        continue
+                    if not d.cyclic and all(k in (0, len(d.points) - 1) for k in cuts):
+                        continue          # only at its ends: nothing to cut
+                    parts = [_make_piece(d, a, b)
+                             for a, b in _piece_indices(len(d.points), d.cyclic, cuts)
+                             if b > a]
+                    if parts:
+                        changed.append(i)
+                        pieces += parts
+                if not changed:
+                    continue
+                backup_splines(context, obj, [datas[i] for i in changed])
+                write_edit_result(obj, datas, changed, pieces)
+                count += len(pieces)
+        if not count:
+            self.report({'WARNING'}, "Nothing to split: select the control points to cut at")
+            return {'CANCELLED'}
+        self.report({'INFO'}, f"Created {count} segment(s)")
+        return {'FINISHED'}
 
 
 # -----------------------------------------------------------------------------
@@ -453,9 +459,9 @@ class ETR_OT_curve_toolkit_separate(bpy.types.Operator):
                     kept.append(obj.name)
                 if not picked:
                     continue
-                for number, index in enumerate(picked, start=1):
-                    new_obj = new_curve_object(
-                        context, obj, [datas[index]], f"{obj.name}_{number:02d}")
+                for index in picked:
+                    new_obj = new_curve_object(context, obj, [datas[index]], obj.name,
+                                               numbered=True)
                     link_like(new_obj, obj, context)
                     created.append(new_obj)
                 sd.replace_splines(
@@ -493,8 +499,8 @@ class ETR_OT_curve_toolkit_separate(bpy.types.Operator):
             if obj.data.users > 1:
                 obj.data = obj.data.copy()   # do not empty the other users
             datas = sd.read_all(obj.data)
-            for number, data in enumerate(datas[1:], start=1):
-                new_obj = new_curve_object(context, obj, [data], f"{obj.name}_{number:02d}")
+            for data in datas[1:]:
+                new_obj = new_curve_object(context, obj, [data], obj.name, numbered=True)
                 link_like(new_obj, obj, context)
                 created.append(new_obj)
             sd.replace_splines(obj.data, datas[:1])
@@ -722,9 +728,10 @@ SELECT_CHOICES = (
     ('STRAYS', "Strays", "Select the stray points, and only those: single-point "
                          "splines and splines shorter than the Threshold in a curve, "
                          "loose vertices in a mesh"),
-    ('POLY', "Polys", "Select every Poly spline, and only those"),
-    ('BEZIER', "Beziers", "Select every Bezier spline, and only those"),
-    ('NURBS', "NURBS", "Select every NURBS spline, and only those"),
+    ('POLY', "Polys", "Select every Poly spline, and only those (not the stray points)"),
+    ('BEZIER', "Beziers", "Select every Bezier spline, and only those (not the stray "
+                          "points)"),
+    ('NURBS', "NURBS", "Select every NURBS spline, and only those (not the stray points)"),
 )
 
 
@@ -806,10 +813,14 @@ class ETR_OT_curve_toolkit_select_by_type(bpy.types.Operator):
                         _select_spline(spline, False)
             return {'FINISHED'}
         found = 0
+        threshold = context.scene.etr_curves_toolkit.merge_threshold
         with edit_scope(context) as objs:
             for obj in objs:
                 for spline in obj.data.splines:
-                    if spline.type == self.kind:
+                    # Stray points are left to Strays: Polys, Beziers and NURBS
+                    # are the real splines of that type.
+                    if spline.type == self.kind and not _is_stray(
+                            obj, sd.read_spline(spline), threshold):
                         _select_spline(spline, True)
                         found += 1
                     elif not self.extend:
@@ -884,6 +895,43 @@ class ETR_OT_curve_toolkit_set_resolution(bpy.types.Operator):
                 obj.data.resolution_u = self.resolution
 
         self.report({'INFO'}, f"Resolution {self.resolution} on {changed} spline(s)")
+        return {'FINISHED'}
+
+
+# -----------------------------------------------------------------------------
+# Set Dimensions (2D / 3D)
+# -----------------------------------------------------------------------------
+
+class ETR_OT_curve_toolkit_set_dimensions(bpy.types.Operator):
+    """Make every selected curve 2D or 3D at once (the setting of Object Data > Shape). The 2D and 3D buttons next to it show and set the one of the active curve"""
+    bl_idname = "etr.curve_toolkit_set_dimensions"
+    bl_label = "Set Dimensions"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    dimensions: EnumProperty(
+        name="Dimensions",
+        description="2D: flat curves, filled when closed. 3D: free in space (a 3D curve "
+                    "made 2D is flattened onto its local XY plane)",
+        items=(
+            ('2D', "2D", "Flat curves, in their local XY plane"),
+            ('3D', "3D", "Curves free in space"),
+        ),
+        default='2D',
+    )
+
+    poll = classmethod(_poll_object_or_edit)
+
+    def execute(self, context):
+        if context.mode == EDIT_MODE:
+            objs = curves_in_edit_mode(context)
+        else:
+            objs = selected_curves(context)
+        changed = 0
+        for curve in {o.data for o in objs}:
+            if curve.dimensions != self.dimensions:
+                curve.dimensions = self.dimensions
+                changed += 1
+        self.report({'INFO'}, f"{self.dimensions} on {changed} curve(s)")
         return {'FINISHED'}
 
 
@@ -1219,6 +1267,7 @@ classes = (
     ETR_OT_curve_toolkit_set_first_point,
     ETR_OT_curve_toolkit_invert_direction,
     ETR_OT_curve_toolkit_split_at_points,
+    ETR_OT_curve_toolkit_set_dimensions,
     ETR_OT_curve_toolkit_join_merge,
     ETR_OT_curve_toolkit_separate,
     ETR_OT_curve_toolkit_remove_doubles,

@@ -477,14 +477,73 @@ def _same_curve(p, q, tol):
     return direction
 
 
+def simplify_region(loops, tol):
+    """The same region (even-odd) as loops that do not cross each other.
+
+    A region whose loops cross (two overlapping circles in one curve, which
+    Blender fills even-odd: the overlap is a hole) or a loop that crosses
+    itself cannot go into boolean() as it is: its pieces between two
+    crossings would be judged by a midpoint whose side changes along them.
+    The loops are cut where they cross, every piece is kept with the inside
+    on its left (the even-odd inside of the whole region), pieces that two
+    loops share are dropped (they cancel out), and the pieces are chained
+    again. A region with no crossings is returned as it is.
+    """
+    cuts = {}
+    for i, la in enumerate(loops):
+        boxes_a = [s.bbox() for s in la]
+        for j in range(i, len(loops)):
+            lb = loops[j]
+            for ai, sa in enumerate(la):
+                for bj, sb in enumerate(lb):
+                    if i == j and bj <= ai:
+                        continue
+                    if not _boxes_overlap(boxes_a[ai], sb.bbox(), tol.join):
+                        continue
+                    for s, t in intersect(sa, sb, tol):
+                        cuts.setdefault((i, ai), []).append(s)
+                        cuts.setdefault((j, bj), []).append(t)
+    if not cuts:
+        return loops
+    pieces = _cut_loops(loops, cuts, tol)
+    shared = _shared_pieces(pieces, tol)
+    if len(pieces) == sum(len(loop) for loop in loops) and not shared:
+        return loops            # they only touch at their own points
+    keep = []
+    for k, p in enumerate(pieces):
+        if k in shared:
+            continue
+        left = _left_probe(p, 0.5, tol.probe)
+        mid = p.pt(0.5)
+        right = (2.0 * mid[0] - left[0], 2.0 * mid[1] - left[1])
+        inside_left = inside_region(left, loops)
+        if inside_left == inside_region(right, loops):
+            continue            # not a boundary of the region
+        keep.append(p if inside_left else p.reversed())
+    return chain_loops(keep, tol)
+
+
+def _shared_pieces(pieces, tol):
+    """Indices of the pieces that run along another piece."""
+    shared = set()
+    for i, p in enumerate(pieces):
+        if i in shared:
+            continue
+        for j in range(i + 1, len(pieces)):
+            if j not in shared and _same_curve(p, pieces[j], tol):
+                shared.update((i, j))
+                break
+    return shared
+
+
 def boolean(region_a, region_b, op, tol):
     """Boolean of two regions (lists of closed loops of Seg).
 
     op: 'UNION', 'INTERSECTION' or 'DIFFERENCE' (a minus b).
     Returns the resulting loops (interior on the left of each loop).
     """
-    A = orient_region(region_a, tol)
-    B = orient_region(region_b, tol)
+    A = orient_region(simplify_region(region_a, tol), tol)
+    B = orient_region(simplify_region(region_b, tol), tol)
     cuts_a, cuts_b = _intersect_regions(A, B, tol)
     pa = _cut_loops(A, cuts_a, tol)
     pb = _cut_loops(B, cuts_b, tol)
@@ -544,9 +603,19 @@ def chain_loops(pieces, tol):
                 break
             loop.append(remaining.pop(best))
             closed = _dist(loop[-1].p1, start) <= tol.join * 10
-        if closed:
+        if closed and not _degenerate(loop, tol):
             loops.append(_weld(loop))
     return loops
+
+
+def _degenerate(loop, tol):
+    """A loop that encloses nothing: all of it within a hair of its start.
+    Two boundaries that touch almost tangentially (a tangent line ending on a
+    Bezier circle, which is not exactly round) can leave one of these
+    between their two nearly coincident crossings."""
+    start = loop[0].p0
+    reach = tol.join * 100
+    return all(_dist(c, start) <= reach for s in loop for c in (s.p0, s.h0, s.h1, s.p1))
 
 
 def _weld(loop):

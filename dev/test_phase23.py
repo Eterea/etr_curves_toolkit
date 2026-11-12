@@ -439,12 +439,18 @@ def stray_split_edit_mode_only_selected():
                      ('POLY', [(2, 2)], False, (0,))])
     edit(obj)
     assert ops.curve_toolkit_split_at_stray_points() == {'FINISHED'}
-    assert bpy.context.mode == 'OBJECT'
-    pieces = _pieces()
-    assert len(pieces) == 2, pieces           # only the first line, at x = 1
-    xs = sorted(round(p.data.splines[0].points[-1].co.x, 4) for p in pieces)
+    # v0.26.0: the pieces stay in the curve, selected, in Edit Mode; no backup.
+    assert bpy.context.mode == 'EDIT_CURVE'
+    assert not _pieces() and not any(o.name.startswith("Backup_") for o in bpy.data.objects)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    lines = [s for s in obj.data.splines if len(s.points) > 1]
+    strays = [s for s in obj.data.splines if len(s.points) == 1]
+    assert len(lines) == 3 and len(strays) == 3      # only the first line, at x = 1
+    cut = [s for s in lines if s.points[0].select]
+    xs = sorted(round(s.points[-1].co.x, 4) for s in cut)
     assert xs == [1, 4], xs
-    assert not obj.visible_get()
+    assert not any(p.select for s in strays for p in s.points)
+    assert obj.visible_get()
 
 
 @test
@@ -507,8 +513,9 @@ def panel_global_settings():
     props = [c[1][1] for c in fake.mock_calls if c[0].endswith(".prop") and len(c[1]) > 1]
     assert props == ["merge_threshold"], props
     assert 'DEFAULT_CLOSED' in panel.ETR_PT_curve_toolkit_global.bl_options
-    assert panel.classes[-1] is panel.ETR_PT_curve_toolkit_global
-    assert panel.classes[-2] is panel.ETR_PT_curve_toolkit_origin
+    # Documentation came after it in v0.25.0.
+    assert panel.classes[-2] is panel.ETR_PT_curve_toolkit_global
+    assert panel.classes[-3] is panel.ETR_PT_curve_toolkit_origin
     _, drawn = _drawn(panel.ETR_PT_curve_toolkit_booleans)
     i = drawn.index("etr.curve_toolkit_split_at_points")
     assert drawn[i + 1] == "etr.curve_toolkit_split_at_stray_points", drawn

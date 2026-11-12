@@ -49,6 +49,10 @@ seen from the view:
   - Normal Rotation (default 0): turns it about its center, in its plane.
   - Arc (default off): only Angle degrees of it, from 12 o'clock, clockwise
     for a positive angle and counter-clockwise for a negative one.
+  - Capable Arc (3 Points, with Arc): the only arc that goes through the 3
+    points, from the first one, through the second, to the third, the Goal
+    (the points taken in order, around, so that the Goal is the last one).
+    Oriented, Angle and Normal Rotation do not apply and are greyed out.
   - Add Helper Points (every tool but Center & Point): stray control points
     (Poly splines of a single point) at every point where the circle touches a
     line, and at its center when the center was not one of the picked points.
@@ -76,7 +80,7 @@ from mathutils import Matrix, Vector
 
 from . import geometry as geo
 from . import spline_data as sd
-from .context_utils import EDIT_MODE, edit_scope, is_curve, world_matrix
+from .context_utils import EDIT_MODE, edit_scope, is_curve, unique_name, world_matrix
 from .primitives import CIRCLE_HANDLE
 
 EDIT_MESH = 'EDIT_MESH'
@@ -350,6 +354,26 @@ def toward_viewer(normal, view_normal):
     return normal
 
 
+def capable_arc(circle, points, goal):
+    """(start, sweep) of the arc of `circle` that goes through the 3 points:
+    from the one after the Goal, through the next one, to the Goal itself
+    (in the order of the points, around). With the Goal on the last point,
+    which is where it starts, that is from the first point, through the
+    second, to the third."""
+    a, b, c = (points[(goal + k) % 3] for k in (1, 2, 3))
+    start = geo.normalized(geo.sub(a, circle.center))
+    clockwise = geo.cross(start, circle.normal)
+
+    def turn(p):
+        """Clockwise angle from `start` to p, in [0, 2 pi)."""
+        v = geo.sub(p, circle.center)
+        return math.atan2(geo.dot(v, clockwise), geo.dot(v, start)) % (2.0 * math.pi)
+
+    to_b, to_c = turn(b), turn(c)
+    # Clockwise when that way meets B before C, counter-clockwise otherwise.
+    return start, (to_c if to_b < to_c else to_c - 2.0 * math.pi)
+
+
 def foot_on_line(p, a, b):
     """Foot of the perpendicular from p to the line through a and b."""
     along = geo.sub(b, a)
@@ -404,6 +428,8 @@ class CircleFromPoints:
     helpers = True
     #: True when the center is one of the picked points (no helper point there).
     center_given = False
+    #: True for the tool that offers Capable Arc (3 Points).
+    capable = False
 
     view: EnumProperty(
         name="View",
@@ -424,6 +450,14 @@ class CircleFromPoints:
     arc: BoolProperty(
         name="Arc",
         description="Draw only an arc of the circle, from its start",
+        default=False,
+        options={'SKIP_SAVE'},
+    )
+    capable_arc: BoolProperty(
+        name="Capable Arc",
+        description="The only arc of the circle that goes through the 3 points: from the "
+                    "first one, through the second, to the third (the Goal). Oriented, "
+                    "Angle and Normal Rotation do not apply",
         default=False,
         options={'SKIP_SAVE'},
     )
@@ -495,17 +529,28 @@ class CircleFromPoints:
         layout.use_property_split = True
         layout.use_property_decorate = False
         self.draw_extra(layout)
-        layout.prop(self, "oriented")
+        # The Capable Arc is fixed by the 3 points: the settings that turn or
+        # size the arc are greyed out.
+        free = not self._capable_on()
+        row = layout.row()
+        row.enabled = free
+        row.prop(self, "oriented")
         if self.count == 2:
             layout.prop(self, "toggle_goal")
         else:
             # Three small buttons, the chosen one highlighted.
             layout.row().prop(self, "goal", expand=True)
         layout.prop(self, "arc")
+        if self.capable:
+            row = layout.row()
+            row.enabled = self.arc
+            row.prop(self, "capable_arc")
         row = layout.row()
-        row.enabled = self.arc
+        row.enabled = self.arc and free
         row.prop(self, "angle")
-        layout.prop(self, "normal_rotation")
+        row = layout.row()
+        row.enabled = free
+        row.prop(self, "normal_rotation")
         if self.helpers:
             layout.prop(self, "helper_points")
         if self.planar:
@@ -540,7 +585,7 @@ class CircleFromPoints:
     def _from_mesh(self, context):
         circle, datas = self._build(picked_in_meshes(context), "vertices")
         bpy.ops.object.mode_set(mode='OBJECT')
-        name = "Circle" if datas[0].cyclic else "Arc"
+        name = unique_name("Circle" if datas[0].cyclic else "Arc")
         curve = bpy.data.curves.new(name, 'CURVE')
         curve.dimensions = '3D'
         obj = bpy.data.objects.new(name, curve)
@@ -577,6 +622,9 @@ class CircleFromPoints:
                         "local XY plane")
         return {'FINISHED'}
 
+    def _capable_on(self):
+        return self.capable and self.arc and self.capable_arc
+
     def goal_index(self, picked):
         """Index of the point that plays the part of the active one.
 
@@ -603,12 +651,15 @@ class CircleFromPoints:
         others = [p for i, p in enumerate(points) if i != goal]
         circle = self.solve(points[goal], others, _tolerance(points))
 
-        start = circle.start if self.oriented else circle.up
-        if self.normal_rotation:
-            start = rotated_in_plane(start, circle.normal, self.normal_rotation)
-        sweep = self.angle if self.arc else None
-        if sweep is not None and abs(sweep) < 1e-6:
-            raise Fail(f"{self.bl_label}: the Angle of the arc cannot be 0")
+        if self._capable_on():
+            start, sweep = capable_arc(circle, points, goal)
+        else:
+            start = circle.start if self.oriented else circle.up
+            if self.normal_rotation:
+                start = rotated_in_plane(start, circle.normal, self.normal_rotation)
+            sweep = self.angle if self.arc else None
+            if sweep is not None and abs(sweep) < 1e-6:
+                raise Fail(f"{self.bl_label}: the Angle of the arc cannot be 0")
         datas = [circle_spline(circle, start, sweep)]
         if self.helpers and self.helper_points:
             helpers = list(circle.contacts)
@@ -725,6 +776,7 @@ class ETR_OT_curve_toolkit_circle_3_points(CircleFromPoints, bpy.types.Operator)
 
     count = 3
     planar = False
+    capable = True
     hint = "The circle starts at the active one (picked last)"
 
     def solve(self, active, others, tol):

@@ -47,6 +47,7 @@ from .context_utils import (
     has_active_curve,
     link_like,
     selected_curves,
+    unique_name,
 )
 
 #: Shorter handles (relative to the size of the curve) count as zero.
@@ -116,10 +117,11 @@ class ETR_OT_curve_toolkit_handles_to_lines(bpy.types.Operator):
                 lines += handle_lines(data, only_selected=False)
             if not lines:
                 continue
-            curve = bpy.data.curves.new(f"{obj.name}_Handles", 'CURVE')
+            name = unique_name(f"{obj.name}_Handles")
+            curve = bpy.data.curves.new(name, 'CURVE')
             curve.dimensions = '3D'
             sd.replace_splines(curve, lines)
-            new_obj = bpy.data.objects.new(f"{obj.name}_Handles", curve)
+            new_obj = bpy.data.objects.new(name, curve)
             new_obj.matrix_basis = obj.matrix_basis.copy()
             new_obj.parent = obj.parent
             new_obj.matrix_parent_inverse = obj.matrix_parent_inverse.copy()

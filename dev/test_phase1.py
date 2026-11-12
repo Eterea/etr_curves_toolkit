@@ -281,7 +281,7 @@ def split_at_points_collection_and_nurbs():
     assert not any(x.name.startswith("Split_") for x in bpy.context.scene.collection.objects)
     src = bpy.data.collections.get("Curve Boolean Sources")
     assert src is not None and list(src.objects) == [o]
-    assert bpy.context.view_layer.layer_collection.children[src.name].exclude
+    assert bpy.context.view_layer.layer_collection.children[src.name].hide_viewport
 
     reset()
     o = make_curve("n", [nurbs([(0, 0, 0), (1, 1, 0), (2, 0, 0), (3, 1, 0)])])
@@ -297,9 +297,13 @@ def split_at_points_edit_mode_selected():
     before = evaluated_points(o)
     edit(o)
     assert ops.curve_toolkit_split_at_points() == {'FINISHED'}
-    pieces = [x for x in bpy.data.objects if x.name.startswith("Split_")]
-    assert len(pieces) == 2
-    assert set().union(*(evaluated_points(x) for x in pieces)) == before
+    # v0.26.0: the pieces stay in the curve, in Edit Mode, with no backup
+    # (Backup Splines in Edit Mode is off).
+    assert bpy.context.mode == 'EDIT_CURVE'
+    assert not any(x.name.startswith(("Split_", "Backup_")) for x in bpy.data.objects)
+    object_mode()
+    assert spline_count(o) == 2
+    assert evaluated_points(o) == before
 
 
 # -----------------------------------------------------------------------------

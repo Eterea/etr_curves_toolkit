@@ -7,19 +7,21 @@ Curve Toolkit - Split at Stray Points
 Cut the splines of a curve where stray points (Poly splines of a single
 point, like the ones Points at Intersections, Points Along Curve or Points
 in Between add) lie on them, instead of at their own control points (that is
-Split at Control Points). Every piece becomes a new object (Split_01,
-Split_02...), and the original curve is kept as a backup, hidden or in the
-"Curve Boolean Sources" collection, the same way as the Booleans and the
-other Splits (Place Sources / Place Results).
+Split at Control Points).
 
   - Object Mode: every selected curve that has stray points on its splines.
     Only the stray points of the same object count (stray points cannot be
-    seen in Object Mode, so other objects are left out). Splines that no
-    stray point touches become objects of their own too, unchanged, so
-    nothing but the stray points goes out of sight.
-  - Edit Mode: only the splines with a selected control point are cut, and
-    only by the selected stray points. Each curve being edited is cut by its
-    own stray points. It ends in Object Mode, with the pieces selected.
+    seen in Object Mode, so other objects are left out). Every piece becomes
+    a new object (Split_01, Split_02...), and the original curve is kept as
+    a backup, hidden or in the "Curve Boolean Sources" collection, the same
+    way as the Booleans and the other Splits (Place Sources / Place
+    Results). Splines that no stray point touches become objects of their
+    own too, unchanged, so nothing but the stray points goes out of sight.
+  - Edit Mode: only the splines with a selected point are cut, and only by
+    the selected stray points. Each curve being edited is cut by its own
+    stray points. The pieces replace the splines that are cut, selected, in
+    the same curve; the stray points stay there, deselected. A backup of the
+    splines that are cut is kept only with "Backup Splines in Edit Mode".
 
 When a stray point is on a spline is decided by the view:
   - In an orthographic axis view (Top, Bottom, Front, Back, Right, Left) it
@@ -45,18 +47,20 @@ from . import geometry as geo
 from . import spline_data as sd
 from .context_utils import (
     EDIT_MODE,
-    curves_in_edit_mode,
+    backup_splines,
     edit_scope,
     finish_sources_and_results,
     has_active_curve,
     new_curve_object,
     selected_curves,
     world_matrix,
+    write_edit_result,
 )
 from .utilities import _make_piece, _piece_indices
 
 TITLE = "Split at Stray Points"
-SPLIT_PREFIX = "Split_"
+#: Base name of the pieces of the Object Mode (Split_01, Split_02...).
+SPLIT_NAME = "Split"
 
 #: Samples per segment before the closest point is refined.
 _SAMPLES = 32
@@ -258,7 +262,7 @@ def _is_stray(data):
 
 
 class ETR_OT_curve_toolkit_split_at_stray_points(bpy.types.Operator):
-    """Cut the splines where stray points of the same curve lie on them (within the Threshold of Global Settings). Every piece becomes a new object; the original is kept, hidden. Object Mode: the selected curves. Edit Mode: the selected splines, by the selected stray points. In an orthographic Top, Front or Right view it is enough for a point to be seen on a spline. Poly and Bezier"""
+    """Cut the splines where stray points of the same curve lie on them (within the Threshold of Global Settings). Object Mode: the selected curves; every piece becomes a new object and the original is kept, hidden. Edit Mode: the selected splines, by the selected stray points, in the same curve. In an orthographic axis view it is enough for a point to be seen on a spline. Poly and Bezier"""
     bl_idname = "etr.curve_toolkit_split_at_stray_points"
     bl_label = "Split at Stray Points"
     bl_options = {'REGISTER', 'UNDO'}
@@ -302,86 +306,104 @@ class ETR_OT_curve_toolkit_split_at_stray_points(bpy.types.Operator):
         self._read_view(context)
         view_name = None if self.view == 'NONE' else self.view
         threshold = context.scene.etr_curves_toolkit.merge_threshold
-        edit = context.mode == EDIT_MODE
-        active = context.active_object
+        self._any_strays = False
         try:
-            if edit:
-                editing = curves_in_edit_mode(context)
-                try:
-                    with edit_scope(context, reenter=False) as objs:
-                        created, nurbs = self._split(context, objs, True, view_name,
-                                                     threshold)
-                except Fail:
-                    # Nothing was changed: back to the Edit Mode it came from.
-                    for o in editing:
-                        o.select_set(True)
-                    context.view_layer.objects.active = active
-                    bpy.ops.object.mode_set(mode='EDIT')
-                    raise
-            else:
-                objs = selected_curves(context)
-                created, nurbs = self._split(context, objs, False, view_name, threshold)
+            if context.mode == EDIT_MODE:
+                return self._edit(context, view_name, threshold)
+            return self._object(context, view_name, threshold)
         except Fail as error:
             self.report({'ERROR'}, f"{TITLE}: {error}")
             return {'CANCELLED'}
 
+    def _object(self, context, view_name, threshold):
+        active = context.active_object
+        created = []
+        nurbs = 0
+        for obj in selected_curves(context):
+            datas = sd.read_all(obj.data)
+            pieces, cut, n = self._cut(context, obj, datas, False, view_name, threshold)
+            nurbs += n
+            if cut:
+                created.append((obj, [new_curve_object(context, obj, [piece], SPLIT_NAME,
+                                                       numbered=True) for piece in pieces]))
+        if not created:
+            self._nothing_cut(False)
         sources = [obj for obj, _ in created]
         results = [(new, obj) for obj, news in created for new in news]
         anchor = active if active in sources else sources[0]
         finish_sources_and_results(context, sources, results, anchor)
-        note = f" ({nurbs} NURBS spline(s) left whole)" if nurbs else ""
-        self.report({'INFO'}, f"{TITLE}: {len(results)} piece(s){note}")
+        self._done(len(results), nurbs)
         return {'FINISHED'}
 
-    def _split(self, context, objs, edit, view_name, threshold):
-        """[(source object, [new objects])] and how many NURBS splines were
-        on the way. Raises Fail when nothing is cut."""
-        created = []
-        nurbs = 0
-        any_strays = False
-        counter = 0
-        for obj in objs:
-            datas = sd.read_all(obj.data)
-            mw = world_matrix(obj)
-            strays = [tuple(mw @ Vector(d.points[0].co)) for d in datas
-                      if _is_stray(d) and (not edit or d.points[0].select)]
-            if not strays:
+    def _edit(self, context, view_name, threshold):
+        """The cut splines are replaced by their pieces, selected, in their
+        own curve; the stray points stay, deselected."""
+        count = nurbs = 0
+        with edit_scope(context) as objs:
+            jobs = []
+            for obj in objs:
+                datas = sd.read_all(obj.data)
+                pieces, cut, n = self._cut(context, obj, datas, True, view_name, threshold)
+                nurbs += n
+                if cut:
+                    jobs.append((obj, datas, cut, pieces))
+            if not jobs:
+                self._nothing_cut(True)
+            for obj, datas, cut, pieces in jobs:
+                backup_splines(context, obj, [datas[i] for i in cut])
+                write_edit_result(obj, datas, cut, pieces)
+                count += len(pieces)
+        self._done(count, nurbs)
+        return {'FINISHED'}
+
+    def _done(self, count, nurbs):
+        note = f" ({nurbs} NURBS spline(s) left whole)" if nurbs else ""
+        self.report({'INFO'}, f"{TITLE}: {count} piece(s){note}")
+
+    def _nothing_cut(self, edit):
+        if not self._any_strays:
+            raise Fail("there are no stray points" + (" selected" if edit else "")
+                       + " in the curve")
+        raise Fail("no stray point is on a spline (within the Threshold of Global "
+                   "Settings" + ("; select the splines too" if edit else "") + ")")
+
+    def _cut(self, context, obj, datas, edit, view_name, threshold):
+        """Cut the splines of one curve by its stray points.
+
+        Object Mode: every spline, and the pieces include the splines that are
+        not cut (each one goes to an object of its own). Edit Mode: only the
+        selected splines, by the selected stray points, and the pieces are
+        only those of the splines that are cut.
+
+        Returns (pieces, indices of the splines that were cut, how many NURBS
+        splines were on the way).
+        """
+        mw = world_matrix(obj)
+        strays = [tuple(mw @ Vector(d.points[0].co)) for d in datas
+                  if _is_stray(d) and (not edit or d.points[0].select)]
+        if not strays:
+            return [], [], 0
+        self._any_strays = True
+        pieces, cut, nurbs = [], [], 0
+        for i, d in enumerate(datas):
+            if _is_stray(d) or not d.points:
                 continue
-            any_strays = True
-            pieces = []
-            cut_any = False
-            for d in datas:
-                if _is_stray(d) or not d.points:
-                    continue
-                if edit and not any(sd.point_selected(p, d.kind) for p in d.points):
-                    continue
-                if d.kind == 'NURBS':
-                    nurbs += 1
-                    pieces.append(d.copy())
-                    continue
-                cubics = ce.world_cubics(context, obj, d)
-                cuts = find_cuts(cubics, strays, threshold, view_name)
-                split = split_spline(d, cuts)
-                if split is None:
-                    pieces.append(d.copy())
-                else:
-                    pieces += split
-                    cut_any = True
-            if not cut_any:
+            if edit and not any(sd.point_selected(p, d.kind) for p in d.points):
                 continue
-            news = []
-            for piece in pieces:
-                counter += 1
-                news.append(new_curve_object(context, obj, [piece],
-                                             f"{SPLIT_PREFIX}{counter:02d}"))
-            created.append((obj, news))
-        if not created:
-            if not any_strays:
-                raise Fail("there are no stray points" + (" selected" if edit else "")
-                           + " in the curve")
-            raise Fail("no stray point is on a spline (within the Threshold of Global "
-                       "Settings" + ("; select the splines too" if edit else "") + ")")
-        return created, nurbs
+            if d.kind == 'NURBS':
+                nurbs += 1
+                if not edit:
+                    pieces.append(d.copy())
+                continue
+            split = split_spline(d, find_cuts(ce.world_cubics(context, obj, d), strays,
+                                              threshold, view_name))
+            if split is None:
+                if not edit:
+                    pieces.append(d.copy())
+            else:
+                pieces += split
+                cut.append(i)
+        return pieces, cut, nurbs
 
 
 classes = (ETR_OT_curve_toolkit_split_at_stray_points,)

@@ -261,7 +261,7 @@ def f9_order():
     expected = {
         c.ETR_OT_curve_toolkit_circle_center_point: ["oriented", "toggle_goal", "arc", "angle", "normal_rotation", "view"],
         c.ETR_OT_curve_toolkit_circle_2_points: ["oriented", "toggle_goal", "arc", "angle", "normal_rotation", "helper_points", "view"],
-        c.ETR_OT_curve_toolkit_circle_3_points: ["oriented", "goal", "arc", "angle", "normal_rotation", "helper_points"],
+        c.ETR_OT_curve_toolkit_circle_3_points: ["oriented", "goal", "arc", "capable_arc", "angle", "normal_rotation", "helper_points"],
         c.ETR_OT_curve_toolkit_circle_segment_center: ["oriented", "goal", "arc", "angle", "normal_rotation", "helper_points", "view"],
         c.ETR_OT_curve_toolkit_circle_inscribed: ["oriented", "goal", "arc", "angle", "normal_rotation", "helper_points"],
         c.ETR_OT_curve_toolkit_circle_tangent_2: ["radius", "oriented", "goal", "arc", "angle", "normal_rotation", "helper_points"],
@@ -269,6 +269,7 @@ def f9_order():
     for cls, names in expected.items():
         fake = mock.MagicMock()
         fake.count, fake.planar, fake.helpers = cls.count, cls.planar, cls.helpers
+        fake.capable = cls.capable
         fake.draw_extra = lambda layout, cls=cls: cls.draw_extra(fake, layout)
         cls.draw(fake, None)
         drawn = [call[1][1] for call in fake.layout.mock_calls

@@ -128,7 +128,7 @@ def on_curves(points, objs, tol=2e-5):
 
 
 def result():
-    objs = [o for o in bpy.data.objects if o.name.startswith(bl.BOOLEAN_NAME)]
+    objs = [o for o in bpy.data.objects if o.name.startswith("Bool_")]
     assert len(objs) == 1, [o.name for o in bpy.data.objects]
     return objs[0]
 
@@ -245,7 +245,7 @@ def errors_leave_everything_untouched():
         select(objs, objs[-1])
         assert cancelled(ops.curve_toolkit_boolean, operation=op)
         assert not any(o.hide_get() for o in objs)
-        assert not any(o.name.startswith(bl.BOOLEAN_NAME) for o in bpy.data.objects)
+        assert not any(o.name.startswith("Bool_") for o in bpy.data.objects)
 
     reset()  # tilted plane
     a = make("a", [square(0, 0, 2, 2)])
@@ -304,7 +304,7 @@ def result_keeps_the_look_of_the_active():
 # -----------------------------------------------------------------------------
 
 def pieces():
-    return sorted((o for o in bpy.data.objects if o.name.startswith(bl.SPLIT_PREFIX)), key=lambda o: o.name)
+    return sorted((o for o in bpy.data.objects if o.name.startswith("Split_")), key=lambda o: o.name)
 
 
 def length_world(objs, steps=200):
@@ -462,9 +462,11 @@ def sources_and_results_collections():
     assert src.name in parent.children and res.name in parent.children
     assert set(src.objects) == {sq, ci} and list(sq.users_collection) == [src]
     assert list(res.objects) == [result()]
-    # The Sources collection is excluded from the View Layer, instead of
-    # hiding the curves one by one.
-    assert bpy.context.view_layer.layer_collection.children["Work"].children[src.name].exclude
+    # The Sources collection is hidden in the viewport (v0.26.0; it used to be
+    # excluded from the View Layer), instead of hiding the curves one by one.
+    lc = bpy.context.view_layer.layer_collection.children["Work"].children[src.name]
+    assert lc.hide_viewport and not lc.exclude
+    assert not sq.hide_get() and not ci.hide_get()
     assert not result().hide_get()
 
     # The user moves the collections and hides the Sources one: they are reused
@@ -481,7 +483,8 @@ def sources_and_results_collections():
     assert {a, b} <= set(src.objects)
     assert len(res.objects) == 2
 
-    # Excluded Sources collection: still works (objects just leave the view layer).
+    # A Sources collection excluded by an older version: it is brought back
+    # into the View Layer and hidden in the viewport instead.
     reset()
     settings = bpy.context.scene.etr_curves_toolkit
     settings.sources_in_collection = True
@@ -493,7 +496,8 @@ def sources_and_results_collections():
     select([a, b], b)
     assert ops.curve_toolkit_boolean(operation='DIFFERENCE') == {'FINISHED'}
     assert set(src.objects) == {a, b}
-    assert bpy.context.view_layer.layer_collection.children[src.name].exclude is True
+    lc = bpy.context.view_layer.layer_collection.children[src.name]
+    assert lc.exclude is False and lc.hide_viewport is True
 
 
 @test
@@ -511,7 +515,7 @@ def panel_and_registration():
     calls = [c for c in layout.mock_calls + layout.row().mock_calls + layout.column().mock_calls
              + layout.column().row().mock_calls]
     idnames = {c[1][0] for c in calls if c[0].endswith("operator") and c[1]}
-    assert {"etr.curve_toolkit_boolean", "etr.curve_toolkit_split"} <= idnames, idnames
+    assert {"etr.curve_toolkit_boolean_union", "etr.curve_toolkit_split"} <= idnames, idnames
     props = bpy.context.scene.etr_curves_toolkit.bl_rna.properties
     assert "sources_in_collection" in props and "results_in_collection" in props
     toolkit.unregister()

@@ -142,21 +142,56 @@ def inside_is_refused():
 
 
 @test
-def boolean_all_belt():
+def connect_and_close():
+    # v0.26.0 (replaces Boolean All): the outer tangents make an isosceles
+    # trapezoid, the crossing ones two triangles that meet where they cross.
     reset()
-    a = make("A", [circle(0, 0, 2), circle(6, 0, 1)])
-    select_only(a)
-    assert ops.curve_toolkit_tangents_2_circles(boolean_all=True) == {'FINISHED'}
+    a = make("A", [circle(0, 0, 2)])
+    b = make("B", [circle(6, 0, 1)])
+    select_only(a, b)
+    assert ops.curve_toolkit_tangents_2_circles(crossing=True, connect_close=True) == {'FINISHED'}
     res = bpy.context.active_object
-    assert res is not a and len(a.data.splines) == 2
-    assert a.hide_get() and not res.hide_get()                 # only the belt in view
-    assert len(res.data.splines) == 1 and res.data.splines[0].use_cyclic_u
-    data = sd.read_spline(res.data.splines[0])
-    samples = sd.flatten(data, steps=24)
-    xs = [p[0] for p in samples]
-    assert abs(min(xs) + 2) < 5e-3 and abs(max(xs) - 7) < 5e-3
-    kinds = [(p.hlt, p.hrt) for p in data.points]
-    assert kinds.count(('VECTOR', 'ALIGNED')) == 2 and kinds.count(('ALIGNED', 'VECTOR')) == 2
+    assert res not in (a, b) and res.name == "Tangents"
+    assert not a.hide_get() and not b.hide_get()              # the circles stay in view
+    splines = list(res.data.splines)
+    assert [len(s.bezier_points) for s in splines] == [4, 3, 3]
+    assert all(s.use_cyclic_u for s in splines)
+    mw = res.matrix_world
+    trapezoid = [mw @ p.co for p in splines[0].bezier_points]
+    assert sum(on_circle(p, (0, 0, 0), 2) for p in trapezoid) == 2
+    assert sum(on_circle(p, (6, 0, 0), 1) for p in trapezoid) == 2
+    # Isosceles: its two legs (the tangents) are as long.
+    legs = [(trapezoid[1] - trapezoid[0]).length, (trapezoid[3] - trapezoid[2]).length]
+    assert abs(legs[0] - legs[1]) < TOL
+    cross = Vector((6 * 2 / 3, 0, 0))                       # divides 0-6 as 2 : 1
+    for spline, center, radius in ((splines[1], (0, 0, 0), 2), (splines[2], (6, 0, 0), 1)):
+        pts = [mw @ p.co for p in spline.bezier_points]
+        assert (pts[1] - cross).length < TOL
+        assert on_circle(pts[0], center, radius) and on_circle(pts[2], center, radius)
+    assert all(p.handle_left_type == 'VECTOR' for s in splines for p in s.bezier_points)
+
+    # Edit Mode: into the curve being edited, the new splines selected.
+    reset()
+    a = make("A", [circle(0, 0, 2, select=True), circle(6, 0, 1, select=True)])
+    select_only(a)
+    bpy.ops.object.mode_set(mode='EDIT')
+    assert ops.curve_toolkit_tangents_2_circles(connect_close=True) == {'FINISHED'}
+    assert bpy.context.mode == 'EDIT_CURVE'
+    bpy.ops.object.mode_set(mode='OBJECT')
+    assert len(a.data.splines) == 3 and a.data.splines[2].use_cyclic_u
+    assert all(p.select_control_point for p in a.data.splines[2].bezier_points)
+    assert not any(p.select_control_point for p in a.data.splines[0].bezier_points)
+
+    # Two circles in two curves, in Edit Mode: into the active one.
+    reset()
+    a = make("A", [circle(0, 0, 2, select=True)])
+    b = make("B", [circle(6, 0, 1, select=True)])
+    select_only(a, b, active=b)
+    bpy.ops.object.mode_set(mode='EDIT')
+    assert ops.curve_toolkit_tangents_2_circles() == {'FINISHED'}
+    bpy.ops.object.mode_set(mode='OBJECT')
+    assert len(b.data.splines) == 3 and len(a.data.splines) == 1
+    assert not any(o.name.startswith("Tangents") for o in bpy.data.objects)
 
 
 @test
@@ -181,7 +216,7 @@ def perpendicular_on_poly():
     a = make("A", [poly([(0, 0, 0), (4, 0, 0), (8, 0, 0)], {1})])
     select_only(a)
     bpy.ops.object.mode_set(mode='EDIT')
-    assert ops.curve_toolkit_perpendicular(**TOP) == {'FINISHED'}
+    assert ops.curve_toolkit_perpendicular(center=0.0, **TOP) == {'FINISHED'}
     bpy.ops.object.mode_set(mode='OBJECT')
     s = a.data.splines[1]
     assert s.type == 'POLY'
@@ -191,23 +226,31 @@ def perpendicular_on_poly():
 
 
 @test
-def perpendicular_negative_and_bisector():
+def perpendicular_center_and_bisector():
+    # v0.26.0: Length is positive, and Center says where the segment sits on
+    # the curve (0: it starts there, 1: it ends there, 0.5: centered).
+    for center, start, end in ((1.0, (2, 0, 0), (4, 0, 0)),
+                               (0.0, (4, 0, 0), (6, 0, 0)),
+                               (0.5, (3, 0, 0), (5, 0, 0))):
+        reset()
+        a = make("A", [poly([(0, 4, 0), (4, 0, 0), (0, -4, 0)], {1})])
+        select_only(a)
+        bpy.ops.object.mode_set(mode='EDIT')
+        ops.curve_toolkit_perpendicular(length=2.0, center=center, **TOP)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        p, q = [x.co.xyz for x in a.data.splines[1].points]
+        assert (p - Vector(start)).length < TOL, (center, p)
+        assert (q - Vector(end)).length < TOL, (center, q)      # outwards, the bisector
+    # Negative lengths are not taken any more.
     reset()
     a = make("A", [poly([(0, 4, 0), (4, 0, 0), (0, -4, 0)], {1})])
     select_only(a)
     bpy.ops.object.mode_set(mode='EDIT')
-    ops.curve_toolkit_perpendicular(length=-2.0, **TOP)
-    bpy.ops.object.mode_set(mode='OBJECT')
-    p, q = [x.co.xyz for x in a.data.splines[1].points]
-    assert (q - Vector((2, 0, 0))).length < TOL          # inwards, along the bisector
-    reset()
-    a = make("A", [poly([(0, 4, 0), (4, 0, 0), (0, -4, 0)], {1})])
-    select_only(a)
-    bpy.ops.object.mode_set(mode='EDIT')
-    ops.curve_toolkit_perpendicular(length=2.0, **TOP)
-    bpy.ops.object.mode_set(mode='OBJECT')
-    q = a.data.splines[1].points[1].co.xyz
-    assert (q - Vector((6, 0, 0))).length < TOL          # outwards
+    try:
+        r = ops.curve_toolkit_perpendicular(length=-2.0, **TOP)
+    except RuntimeError:
+        r = {'CANCELLED'}
+    assert r == {'CANCELLED'}
 
 
 @test
@@ -219,7 +262,7 @@ def perpendicular_on_bezier_is_poly():
     a = make("A", [d])
     select_only(a)
     bpy.ops.object.mode_set(mode='EDIT')
-    ops.curve_toolkit_perpendicular(length=1.0, **TOP)
+    ops.curve_toolkit_perpendicular(length=1.0, center=0.0, **TOP)
     bpy.ops.object.mode_set(mode='OBJECT')
     s = a.data.splines[1]
     assert s.type == 'POLY'

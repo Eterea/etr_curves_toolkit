@@ -52,12 +52,22 @@ class ETR_CurveToolkitSettings(bpy.types.PropertyGroup):
         subtype='DISTANCE',
         unit='LENGTH',
     )
+    backup_in_edit: BoolProperty(
+        name="Backup Splines in Edit Mode",
+        description=(
+            "Booleans and Splits in Edit Mode: keep a copy of the splines they "
+            "change, as a hidden object 'Backup_<name>'. Off, they change the "
+            "curve with no copy. Object Mode always keeps the originals"
+        ),
+        default=False,
+    )
     sources_in_collection: BoolProperty(
         name="Place Sources inside a Collection",
         description=(
-            "Booleans and Splits: move the original curves into the collection "
-            "'Curve Boolean Sources' (created if needed, reused if it exists), which "
-            "is then excluded from the View Layer instead of hiding the curves"
+            "Booleans and Splits: move the original curves (or the backups of "
+            "the Edit Mode) into the collection 'Curve Boolean Sources' "
+            "(created if needed, reused if it exists), which is then hidden in "
+            "the viewport instead of hiding the curves"
         ),
         default=False,
     )
@@ -80,8 +90,9 @@ class ETR_CurveToolkitSettings(bpy.types.PropertyGroup):
     results_in_collection: BoolProperty(
         name="Place Results inside a Collection",
         description=(
-            "Booleans and Splits: put the resulting curves into the collection "
-            "'Curve Boolean Results' (created if needed, reused if it exists)"
+            "Booleans and Splits in Object Mode: put the resulting curves into "
+            "the collection 'Curve Boolean Results' (created if needed, reused "
+            "if it exists). In Edit Mode the results stay in the curve"
         ),
         default=False,
     )

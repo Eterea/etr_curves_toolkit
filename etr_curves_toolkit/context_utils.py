@@ -128,16 +128,46 @@ def link_like(new_obj, source_obj, context):
     (colls[0] if colls else context.scene.collection).objects.link(new_obj)
 
 
-def new_curve_object(context, source_obj, spline_datas, name):
+# -----------------------------------------------------------------------------
+# Names of new objects
+# -----------------------------------------------------------------------------
+
+def _name_taken(name):
+    return name in bpy.data.objects or name in bpy.data.curves
+
+
+def unique_name(base, numbered=False):
+    """A free name for a new object (and its curve data), numbered with an
+    underscore instead of Blender's dot: "Tangents", "Tangents_01",
+    "Tangents_02"... With numbered=True the number is always there
+    ("Split_01", "Split_02"...), for results that come in series.
+
+    The name has to be free both among the objects and among the curves, so
+    the object and its data get the same one. Blender only adds its own
+    ".001" when two objects are made with the same name, which this avoids.
+    """
+    if not numbered and not _name_taken(base):
+        return base
+    number = 1
+    while _name_taken(f"{base}_{number:02d}"):
+        number += 1
+    return f"{base}_{number:02d}"
+
+
+def new_curve_object(context, source_obj, spline_datas, name, numbered=False):
     """New curve object that shares the look of `source_obj` (bevel,
     materials, resolution...) and the given splines. It sits where the source
     sits, with no parent of its own. Returns the object (not yet linked).
+
+    `name` is a base name, made unique by unique_name() (`numbered` as
+    there).
 
     The placement goes through matrix_basis, so that it is stored as the
     location, rotation and scale of the object instead of waiting for the
     depsgraph (see world_matrix)."""
     from . import spline_data
 
+    name = unique_name(name, numbered)
     curve = source_obj.data.copy()
     curve.name = name
     spline_data.replace_splines(curve, spline_datas)
@@ -251,16 +281,52 @@ def keep_sources_above_results(context):
                 pass
 
 
-def finish_sources_and_results(context, sources, results, anchor=None):
-    """Common ending of the Booleans and Splits (and Split at Control Points,
-    Split at Stray Points).
+def _store_sources(context, sources, parent):
+    """Keep the source objects out of sight.
 
-    sources: the original objects. With "Place Sources inside a Collection"
-             they are moved into "Curve Boolean Sources", and that collection
-             is excluded from the View Layer (the checkbox before the eye in
-             the Outliner) instead of hiding them one by one: it is enabled
-             while new sources go in and excluded again at the end. Without
-             that option they are hidden.
+    With "Place Sources inside a Collection" they are moved into "Curve
+    Boolean Sources" (created inside `parent` if needed), and that collection
+    is hidden in the viewport (the eye of the Outliner) instead of hiding the
+    curves one by one: those are shown, so they come back as soon as the
+    collection is. Without that option each source is hidden.
+    """
+    settings = context.scene.etr_curves_toolkit
+    if not settings.sources_in_collection:
+        for obj in sources:
+            try:
+                obj.select_set(False)
+                obj.hide_set(True)
+            except RuntimeError:
+                pass   # not in the View Layer (e.g. its collection is excluded)
+        return
+    coll = named_collection(context, SOURCES_COLLECTION, parent)
+    lc = layer_collection(context.view_layer, coll)
+    if lc is not None and lc.exclude:
+        # Older versions excluded the collection from the View Layer.
+        lc.exclude = False
+    for obj in sources:
+        move_to_collection(obj, coll)
+        try:
+            obj.select_set(False)
+            obj.hide_set(False)   # shown again whenever the collection is
+        except RuntimeError:
+            pass
+    lc = layer_collection(context.view_layer, coll)
+    if lc is not None:
+        lc.hide_viewport = True
+
+
+def _parent_collection(context, anchor):
+    return anchor.users_collection[0] if anchor.users_collection else context.scene.collection
+
+
+def finish_sources_and_results(context, sources, results, anchor=None):
+    """Common ending of the Booleans and Splits in Object Mode (and of Split
+    at Control Points, Split at Stray Points).
+
+    sources: the original objects, kept out of sight (see _store_sources):
+             moved into "Curve Boolean Sources", which is hidden in the
+             viewport, with "Place Sources inside a Collection", or hidden.
     results: list of (new object, source object). They are linked next to
              their source or, with "Place Results inside a Collection", into
              "Curve Boolean Results". Then they are selected.
@@ -271,13 +337,12 @@ def finish_sources_and_results(context, sources, results, anchor=None):
     settings = context.scene.etr_curves_toolkit
     if anchor is None:
         anchor = context.active_object if context.active_object in sources else sources[0]
-    parent = anchor.users_collection[0] if anchor.users_collection else context.scene.collection
+    parent = _parent_collection(context, anchor)
 
     # The sources collection is created first, so it sits above the results
     # one in the Outliner.
-    sources_coll = None
     if settings.sources_in_collection:
-        sources_coll = named_collection(context, SOURCES_COLLECTION, parent)
+        named_collection(context, SOURCES_COLLECTION, parent)
 
     if settings.results_in_collection:
         coll = named_collection(context, RESULTS_COLLECTION, parent)
@@ -290,25 +355,7 @@ def finish_sources_and_results(context, sources, results, anchor=None):
     for obj in context.selected_objects:
         obj.select_set(False)
 
-    if sources_coll is not None:
-        coll = sources_coll
-        lc = layer_collection(context.view_layer, coll)
-        if lc is not None:
-            lc.exclude = False
-        for obj in sources:
-            move_to_collection(obj, coll)
-            try:
-                obj.hide_set(False)   # shown again whenever the collection is
-            except RuntimeError:
-                pass
-        if lc is not None:
-            lc.exclude = True
-    else:
-        for obj in sources:
-            try:
-                obj.hide_set(True)
-            except RuntimeError:
-                pass   # not in the View Layer (e.g. its collection is excluded)
+    _store_sources(context, sources, parent)
     keep_sources_above_results(context)
     last = None
     for obj, _ in results:
@@ -319,3 +366,58 @@ def finish_sources_and_results(context, sources, results, anchor=None):
             pass
     if last is not None:
         context.view_layer.objects.active = last
+
+
+# -----------------------------------------------------------------------------
+# The same tools in Edit Mode
+# -----------------------------------------------------------------------------
+
+BACKUP_PREFIX = "Backup_"
+
+
+def backup_splines(context, obj, datas):
+    """With "Backup Splines in Edit Mode", a copy of the splines a Boolean or
+    a Split is about to change, as a new curve object "Backup_<name>" with the
+    look and place of `obj`, kept out of sight the way the sources of the
+    Object Mode are (hidden, or in "Curve Boolean Sources" with "Place Sources
+    inside a Collection"). Call it in Object Mode (inside edit_scope).
+    Returns the new object, or None when the option is off.
+
+    "Place Results inside a Collection" does not apply here: the results stay
+    in the curve being edited.
+    """
+    if not context.scene.etr_curves_toolkit.backup_in_edit or not datas:
+        return None
+    copies = []
+    for d in datas:
+        c = d.copy()
+        for p in c.points:
+            p.select = p.select_left = p.select_right = False
+        copies.append(c)
+    backup = new_curve_object(context, obj, copies, f"{BACKUP_PREFIX}{obj.name}")
+    link_like(backup, obj, context)
+    _store_sources(context, [backup], _parent_collection(context, obj))
+    keep_sources_above_results(context)
+    return backup
+
+
+def selected_flags(data, state):
+    """Select (or deselect) every point of a snapshot, handles included."""
+    for p in data.points:
+        p.select = state
+        if p.hl is not None:
+            p.select_left = p.select_right = state
+        else:
+            p.select_left = p.select_right = False
+    return data
+
+
+def write_edit_result(obj, datas, picked, results):
+    """Rebuild the splines of `obj` (in Object Mode, inside edit_scope): the
+    splines that were not picked, in their order and deselected, then the
+    results, selected, in place of the picked ones (indices in `picked`)."""
+    from . import spline_data
+
+    picked = set(picked)
+    kept = [selected_flags(d.copy(), False) for i, d in enumerate(datas) if i not in picked]
+    spline_data.replace_splines(obj.data, kept + [selected_flags(d, True) for d in results])

@@ -150,6 +150,10 @@ def utilities_order():
         "etr.curve_toolkit_swap_pair",
         "etr.curve_toolkit_merge_by_distance", "etr.curve_toolkit_join_merge",
         "etr.curve_toolkit_remove_doubles",
+        # v0.26.0: 2D / 3D / Set All (with no active curve, the 2D and 3D
+        # buttons are drawn, disabled, as the operator too).
+        "etr.curve_toolkit_set_dimensions", "etr.curve_toolkit_set_dimensions",
+        "etr.curve_toolkit_set_dimensions",
         "etr.curve_toolkit_set_resolution", "curve.cyclic_toggle"]
 
 

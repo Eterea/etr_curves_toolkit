@@ -1,5 +1,92 @@
 # Changelog
 
+## v0.26.0
+
+- **Booleans & Splits** (formerly *Curve Booleans*) now work in **Object
+  Mode and Edit Mode**: Union, Intersection, Difference, Symmetrize Split,
+  Split Active and Split All (Split at Control Points and Split at Stray
+  Points already did). In Object Mode they work as before. In Edit Mode they
+  take the selected splines of **one curve** (one selected point of a spline
+  is enough) and leave the result **in that same curve**, selected, in Edit
+  Mode:
+  - Union: any number of closed splines; Intersection and Difference:
+    exactly two. An open spline among them cancels with a message.
+  - Split Active: a new **Goal** (F9), a number from 0 to the number of
+    selected splines minus 1 (a hard limit: a higher value goes back to the
+    last one), picks the spline that is cut by the others. It starts at the
+    active spline (the one of the point clicked last) when it is selected,
+    otherwise at 0. When the Goal is not crossed, nothing changes but the F9
+    panel opens.
+  - Split at Control Points and Split at Stray Points no longer leave the
+    Edit Mode or make new objects there: the pieces stay in the curve,
+    selected (the stray points stay, deselected).
+- New option **Backup Splines in Edit Mode** (off by default), above the
+  two collection options: in Edit Mode, a copy of the splines an operation
+  changes is kept as a hidden object `Backup_<name>` (or in *Curve Boolean
+  Sources*). Off, the operations of the Edit Mode change the curve with no
+  copy. It is greyed out in Object Mode, where the originals are always
+  kept. In Edit Mode, *Place Sources inside a Collection* is greyed out
+  while it is off, and *Place Results inside a Collection* always is (the
+  results stay in the curve).
+- **Difference**: new **Toggle Goal** (F9) in both modes, which swaps the
+  one that bites and the one that is bitten. In Edit Mode the active spline
+  bites by default (or the first one). An empty Difference now finishes with
+  a warning, so *Toggle Goal* can be tried in F9.
+- The **Curve Boolean Sources** collection is now **hidden in the viewport**
+  (the eye) instead of being excluded from the View Layer. A collection
+  excluded by an older version is brought back and hidden.
+- **Names of the results**: `Bool_Union_01`, `Bool_Inter_01`,
+  `Bool_Diff_01`, `Sym_01`, `Split_01`... (always numbered). Every other new
+  object of the toolkit (Tangents, Circle, Arc, Line, Points, the pieces of
+  Separate...) keeps its name and, when that one is taken, gets `_01`,
+  `_02`... instead of Blender's `.001` (both the object and its curve data).
+  Blender has no preference to change its own `.001` numbering, so objects
+  that Blender itself duplicates are still numbered that way.
+- The three Booleans are now **three operators** (`etr.curve_toolkit_boolean_union`,
+  `_intersection`, `_difference`), so their tooltips and F9 panels say
+  **Union**, **Intersection** and **Difference**. The generic
+  `etr.curve_toolkit_boolean` (with *Operation*) is still there for scripts.
+- **Symmetrize** is now **Symmetrize Split** (button, F9 panel, tooltip).
+  Closed splines are now mirrored **one by one**: two overlapping closed
+  splines stay two shapes. Before, they were one even-odd region, and with
+  some positions of the axis (often with *Center* > *Object Origin*) a
+  shape was lost or nothing was made.
+- **Booleans**: a region whose splines cross each other (or a spline that
+  crosses itself) is now handled (the engine first turns it into loops that
+  do not cross), and shapes that touch at a point, almost tangentially, no
+  longer leave the result empty.
+- **Tangents to 2 Circles**: *Boolean All* (the belt shape) is replaced by
+  **Connect & Close**, which joins the ends of the tangents: the outer ones
+  into an **isosceles trapezoid**, and the crossing ones (with *Add Crossing
+  Tangents*) into **two triangles** that meet where they cross. The circles
+  are no longer hidden. The points where the lines touch the circles are now
+  put on the splines themselves (a Bezier circle is not exactly round), so
+  the new shapes and the circles take every Boolean. In **Edit Mode** the lines now go into the curve
+  being edited (the active one, when the circles are in two curves), always,
+  and stay selected in Edit Mode, instead of a new object.
+- **Tangents from Point**: new **Connect & Close** (F9, off by default): one
+  closed Poly triangle instead of the two lines. Its points on the circle
+  are put on the spline too.
+- **Perpendicular from Point**: new **Center** (F9, 0 to 1, **0.5** by
+  default): 0 starts the segment at the point, as before, 1 ends it there
+  (the other side) and 0.5 centers it on the curve. *Length* no longer takes
+  negative values.
+- **Circle from 3 Points**: new **Capable Arc** (F9, under *Arc*): the only
+  arc that goes through the three points, from the first one, through the
+  second, to the third (the Goal). *Oriented*, *Angle* and *Normal Rotation*
+  are greyed out while it is on.
+- **Slide Point**: the **outer handle** of an end point is now the mirror
+  image of the inner one (in line with it, and as long) as soon as the point
+  slides. The curve is the same as before (that handle does not shape it);
+  only what is seen changes.
+- **Select All by Type**: *Polys*, *Beziers* and *NURBS* leave the **stray
+  points** out (*Strays* still selects them all, of any type).
+- **Utilities**: new row **2D** / **3D** / **Set All**, under Remove
+  Doubles: the 2D / 3D setting of the active curve, and Set All to give it
+  to every selected curve (new operator `etr.curve_toolkit_set_dimensions`).
+- Development: `dev/test_phase26.py`; the older suites updated to the new
+  behaviour.
+
 ## v0.25.0
 
 - **More compact panel**. *Utilities*: **Subdivide / Simplify / Dissolve** on

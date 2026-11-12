@@ -45,7 +45,7 @@ from bpy_extras import object_utils
 from mathutils import Vector
 
 from . import spline_data as sd
-from .context_utils import EDIT_MODE, edit_scope, has_active_curve, world_matrix
+from .context_utils import EDIT_MODE, edit_scope, has_active_curve, unique_name, world_matrix
 
 # Handle length of a four-point Bezier circle of radius 1, as Blender's own
 # Auto handles compute it: sqrt(2) / 2.5614 (see calchandleNurb_intern).
@@ -167,10 +167,11 @@ class AddCurvePrimitive(object_utils.AddObjectHelper):
     def execute(self, context):
         if context.mode == EDIT_MODE:
             return self.execute_edit(context)
-        curve = bpy.data.curves.new(self.curve_name, 'CURVE')
+        name = unique_name(self.curve_name)
+        curve = bpy.data.curves.new(name, 'CURVE')
         curve.dimensions = '3D'       # as Blender's own curve primitives
         sd.replace_splines(curve, [self.build()])
-        object_utils.object_data_add(context, curve, operator=self, name=self.curve_name)
+        object_utils.object_data_add(context, curve, operator=self, name=name)
         return {'FINISHED'}
 
     # -- Edit Mode -----------------------------------------------------------

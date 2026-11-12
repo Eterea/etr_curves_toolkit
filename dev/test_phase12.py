@@ -405,11 +405,19 @@ def a_straight_span_keeps_vector_handles():
 
 
 @test
-def the_outer_handle_of_an_end_point_travels_with_it():
-    spline = smooth([(0, 0, 0), (2, 2, 0), (5, 2, 0), (7, 0, 0)], select=(0,))
-    offset = geo.sub(spline.points[0].hl, spline.points[0].co)
-    _, after, _ = slid(spline, 0.4, k=0)
-    assert near(geo.sub(after.points[0].hl, after.points[0].co), offset, 1e-5)
+def the_outer_handle_of_an_end_point_mirrors_the_inner_one():
+    # v0.26.0: at Position 0 nothing moves; as soon as the point slides, the
+    # outer handle is the mirror image of the inner one (in line, as long).
+    for k, outer, inner in ((0, "hl", "hr"), (3, "hr", "hl")):
+        spline = smooth([(0, 0, 0), (2, 2, 0), (5, 2, 0), (7, 0, 0)], select=(k,))
+        offset = geo.sub(getattr(spline.points[k], outer), spline.points[k].co)
+        _, after, _ = slid(spline, 0.0, k=k)
+        assert near(geo.sub(getattr(after.points[k], outer), after.points[k].co), offset, 1e-5)
+        for factor in (0.2, 0.5, 1.0):
+            _, after, _ = slid(spline, factor, k=k)
+            p = after.points[k]
+            mirror = geo.sub(p.co, getattr(p, inner))
+            assert near(geo.sub(getattr(p, outer), p.co), mirror, 1e-4), factor
 
 
 # -----------------------------------------------------------------------------

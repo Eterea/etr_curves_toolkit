@@ -337,7 +337,7 @@ def select_menu_on_meshes():
 # -----------------------------------------------------------------------------
 
 @test
-def sources_collection_is_excluded_and_reused():
+def sources_collection_is_hidden_and_reused():
     reset()
     bpy.context.scene.etr_curves_toolkit.sources_in_collection = True
     sq = [(0, 0), (2, 0), (2, 2), (0, 2)]
@@ -347,13 +347,14 @@ def sources_collection_is_excluded_and_reused():
     assert ops.curve_toolkit_boolean(operation='UNION') == {'FINISHED'}
     src = bpy.data.collections["Curve Boolean Sources"]
     lc = layer_collection(bpy.context.view_layer, src)
-    assert lc.exclude and set(src.objects) == {a, b}
+    # v0.26.0: hidden in the viewport, no longer excluded from the View Layer.
+    assert lc.hide_viewport and not lc.exclude and set(src.objects) == {a, b}
     c = curve("C", [('POLY', [(5, 0), (9, 0)], False)])
     d = curve("D", [('POLY', [(6, -1), (6, 1)], False)])
     select([c, d], None)
     assert ops.curve_toolkit_split_all() == {'FINISHED'}
-    assert lc.exclude and set(src.objects) == {a, b, c, d}
-    lc.exclude = False
+    assert lc.hide_viewport and set(src.objects) == {a, b, c, d}
+    lc.hide_viewport = False
     assert not any(o.hide_get() for o in src.objects)
 
 

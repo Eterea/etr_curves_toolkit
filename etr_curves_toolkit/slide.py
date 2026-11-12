@@ -18,6 +18,8 @@ measured by *length along the curve*:
     0.5 puts it exactly halfway along that stretch.
   - An end point has one neighbour and one segment: 0 is where the point is
     now and 1 is the neighbour, so sliding it shortens the curve at that end.
+    Its outer handle, which does not shape the curve, is the mirror image of
+    the inner one while it slides (in line with it and as long).
 
 How close the shape stays:
 
@@ -467,8 +469,9 @@ def _freeze(point, side):
         point.hrt = 'FREE'
 
 
-def _apply(data, k, prev, nxt, pieces):
-    """Write the new cubics back into a copy of the spline."""
+def _apply(data, k, prev, nxt, pieces, factor=0.0):
+    """Write the new cubics back into a copy of the spline. `factor` is the
+    Position, which moves the outer handle of an end point."""
     out = data.copy()
     points = out.points
     moved = points[k]
@@ -510,8 +513,11 @@ def _apply(data, k, prev, nxt, pieces):
             _freeze(neighbour, 'LEFT')
             moved.hr = geo.add(moved.hr, delta)
             moved.hlt = 'VECTOR' if _straight(piece) else 'FREE'
-        # The outer handle of an end point belongs to no segment: it travels
-        # with its point, and a Vector one is put back at a third of the way.
+        # The outer handle of an end point belongs to no segment, so it does
+        # not change the curve: as soon as the point slides it becomes the
+        # mirror image of the inner handle (in line with it and as long), so
+        # what is seen follows the curve. A Vector one is put back at a third
+        # of the way (it is that mirror image already).
         outer = 'hlt' if nxt is not None else 'hrt'
         if getattr(moved, outer) == 'VECTOR':
             third = geo.lerp(moved.co, neighbour.co, -1.0 / 3.0)
@@ -519,9 +525,26 @@ def _apply(data, k, prev, nxt, pieces):
                 moved.hl = third
             else:
                 moved.hr = third
-        elif getattr(moved, outer) == 'AUTO':
-            setattr(moved, outer, 'FREE')
+        else:
+            inner = moved.hr if nxt is not None else moved.hl
+            handle = _outer_towards_mirror(moved.co, moved.hl if nxt is not None else moved.hr,
+                                           inner, factor)
+            if nxt is not None:
+                moved.hl = handle
+            else:
+                moved.hr = handle
+            if factor > 0.0 or getattr(moved, outer) == 'AUTO':
+                setattr(moved, outer, 'FREE')
     return out
+
+
+def _outer_towards_mirror(co, outer, inner, factor):
+    """The outer handle of an end point: where it is at Position 0 (nothing
+    has moved), and the mirror image of the inner handle through the point
+    (in line with it, and as long) as soon as the point slides."""
+    if factor <= 0.0:
+        return outer
+    return geo.sub(co, geo.sub(inner, co))
 
 
 # -----------------------------------------------------------------------------
@@ -665,7 +688,7 @@ class ETR_OT_curve_toolkit_slide_point(bpy.types.Operator):
                         cubics, self.factor, PARENT_TOLERANCE * max(length, 1.0))
                     exact = exact and was_exact
                     worst = max(worst, drift(pieces, cubics) / length)
-                    datas[i] = _apply(data, k, prev, nxt, pieces)
+                    datas[i] = _apply(data, k, prev, nxt, pieces, self.factor)
                     moved += 1
                 sd.replace_splines(obj.data, datas)
 

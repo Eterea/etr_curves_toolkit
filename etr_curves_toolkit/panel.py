@@ -11,12 +11,14 @@ the "Eterea Curves Toolkit" title shown above everything else) and five
 sub-panels, one per section (the first one, Create Curves, has four rows of
 icon buttons: the primitives, the circles from points, the construction
 lines (circle from a segment, tangents, perpendicular) and the construction
-points; Shaping Splines holds the tools that reshape a spline: Round, Bridge,
+points; Booleans & Splits holds the three Booleans, Symmetrize Split, the
+Splits and their Backup / Sources / Results options; Shaping Splines holds the tools that reshape a spline: Round, Bridge,
 Arcs to Corners, Offset, Extend, Slide Point, Slice and Undo Slice, and last
 the Handles row (To Axis, To Lines); Utilities goes from whole splines
 (Select All by Type, Separate) to points (Subdivide / Simplify / Dissolve on
 one row, Set First Point / Invert Direction on another, the Pair row with
-Snap / Merge / Swap, and the merges) and ends with Resolution and Cyclic),
+Snap / Merge / Swap, and the merges) and ends with 2D / 3D, Resolution and
+Cyclic),
 each with its own native collapse arrow (bl_parent_id), plus Global Settings
 (the Threshold that tools of several sections share) and Documentation (a
 link to the online docs) at the bottom. Utilities, Change Origin, Global
@@ -72,6 +74,14 @@ def _active_spline(context):
     if obj is None or obj.type != 'CURVE' or not len(obj.data.splines):
         return None
     return obj.data.splines.active or obj.data.splines[0]
+
+
+def _active_curve_data(context):
+    """Curve data of the active object, or None."""
+    obj = context.active_object
+    if obj is None or obj.type != 'CURVE':
+        return None
+    return obj.data
 
 
 def _equal_slots(layout, count, scale_y=None):
@@ -212,9 +222,11 @@ class ETR_PT_curve_toolkit_primitives(bpy.types.Panel):
 
 
 class ETR_PT_curve_toolkit_booleans(bpy.types.Panel):
+    """Booleans & Splits (its idname keeps the old name of the section,
+    Curve Booleans, so nothing that refers to it breaks)."""
     bl_idname = "ETR_PT_curve_toolkit_booleans"
     bl_parent_id = "ETR_PT_curve_toolkit"
-    bl_label = "Curve Booleans"
+    bl_label = "Booleans & Splits"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
 
@@ -222,17 +234,23 @@ class ETR_PT_curve_toolkit_booleans(bpy.types.Panel):
         layout = self.layout
         settings = context.scene.etr_curves_toolkit
 
-        for slot, (op, icon) in zip(
+        # One operator per operation, so each tooltip says which one it is.
+        for slot, (idname, icon) in zip(
             _equal_slots(layout, 3, scale_y=1.4),
-            (('UNION', 'union'), ('INTERSECTION', 'intersection'), ('DIFFERENCE', 'difference')),
+            (
+                ("etr.curve_toolkit_boolean_union", 'union'),
+                ("etr.curve_toolkit_boolean_intersection", 'intersection'),
+                ("etr.curve_toolkit_boolean_difference", 'difference'),
+            ),
         ):
-            _operator(slot, "etr.curve_toolkit_boolean", "", icon, icon='MOD_BOOLEAN').operation = op
+            _operator(slot, idname, "", icon, icon='MOD_BOOLEAN')
 
-        # Part of the group, a little apart: it is neither a Boolean nor a
-        # Split, but it works the same way (new curves, the originals kept).
+        # A Split too (what crosses the axis is cut there), drawn a little
+        # apart.
         col = layout.column(align=True)
         col.separator(factor=0.5)
-        _operator(col, "etr.curve_toolkit_symmetrize", "Symmetrize", "symmetrize", icon='MOD_MIRROR')
+        _operator(col, "etr.curve_toolkit_symmetrize", "Symmetrize Split", "symmetrize",
+                  icon='MOD_MIRROR')
 
         col = layout.column(align=True)
         col.separator(factor=0.5)
@@ -242,9 +260,20 @@ class ETR_PT_curve_toolkit_booleans(bpy.types.Panel):
         col.operator("etr.curve_toolkit_split_at_points")
         col.operator("etr.curve_toolkit_split_at_stray_points")
 
+        # Object Mode always keeps the originals (and can place them and the
+        # results in collections). Edit Mode keeps a backup only when asked,
+        # and the results stay in the curve being edited.
+        edit = context.mode == 'EDIT_CURVE'
         col = layout.column(align=True)
-        col.prop(settings, "sources_in_collection")
-        col.prop(settings, "results_in_collection")
+        sub = col.row(align=True)
+        sub.enabled = edit
+        sub.prop(settings, "backup_in_edit")
+        sub = col.row(align=True)
+        sub.enabled = not edit or settings.backup_in_edit
+        sub.prop(settings, "sources_in_collection")
+        sub = col.row(align=True)
+        sub.enabled = not edit
+        sub.prop(settings, "results_in_collection")
 
 
 class ETR_PT_curve_toolkit_rounds(bpy.types.Panel):
@@ -342,6 +371,21 @@ class ETR_PT_curve_toolkit_utilities(bpy.types.Panel):
         col.operator("etr.curve_toolkit_join_merge")
         col.operator("etr.curve_toolkit_remove_doubles")
 
+        # 2D or 3D, the curve setting of Object Data > Shape: the two buttons
+        # show (and set) the one of the active curve, Set All gives it to
+        # every selected curve. Three buttons of the same width.
+        curve = _active_curve_data(context)
+        slots = _equal_slots(layout.column(align=True), 3)
+        for slot, value in zip(slots[:2], ('2D', '3D')):
+            slot.enabled = curve is not None
+            if curve is not None:
+                slot.prop_enum(curve, "dimensions", value)
+            else:
+                slot.operator("etr.curve_toolkit_set_dimensions", text=value).dimensions = value
+        op = slots[2].operator("etr.curve_toolkit_set_dimensions", text="Set All")
+        if curve is not None:
+            op.dimensions = curve.dimensions
+
         # Resolution U of many splines at once, on a row of its own (inside
         # a column, Resolution looked like a setting of the button above).
         row = layout.row(align=True)
@@ -403,7 +447,7 @@ class ETR_PT_curve_toolkit_global(bpy.types.Panel):
         settings = context.scene.etr_curves_toolkit
         col = self.layout.column(align=True)
         # Join & Merge, Remove Doubles, Remove Strays (Utilities) and Split
-        # at Stray Points (Curve Booleans).
+        # at Stray Points (Booleans & Splits).
         col.prop(settings, "merge_threshold")
 
 

@@ -8,7 +8,7 @@ icons (`etr_curves_toolkit`). Panel location:
 **3D Viewport > Sidebar (N) > Eterea Curves**.
 
 The tab holds one panel, *Eterea Curves Toolkit*, with one collapsible
-sub-panel per section: *Create Curves*, *Curve Booleans*, *Shaping Splines*,
+sub-panel per section: *Create Curves*, *Booleans & Splits*, *Shaping Splines*,
 *Utilities*, *Change Origin*, *Global Settings* and *Documentation* (the
 last four start collapsed; Global Settings holds the Threshold that several
 tools share, and Documentation links to this page).
@@ -148,9 +148,9 @@ panel (F9) shows the one that was used, and can be changed there.
 **Options (F9)**
 
 In this order: *Radius* (*Tangent to 2* only, first), *Oriented*, *Toggle
-Goal* or *Goal*, *Arc*, *Angle*, *Normal Rotation*, *Add Helper Points* (every
-tool but *Center & Point*) and, last, *View* (the tools drawn on the plane of
-the view).
+Goal* or *Goal*, *Arc*, *Capable Arc* (*3 Points* only), *Angle*, *Normal
+Rotation*, *Add Helper Points* (every tool but *Center & Point*) and, last,
+*View* (the tools drawn on the plane of the view).
 
 - *Radius* (*Tangent to 2* only), see above.
 - *Toggle Goal* (2-point tools) or *Goal* (3-point tools): which point plays
@@ -172,6 +172,15 @@ the view).
   default, from -360° to +360°), from the start. A positive angle turns
   **clockwise** and a negative one **counter-clockwise**, both as seen from
   the view. ±360° gives the whole circle again.
+- *Capable Arc* (*3 Points* only, under *Arc* and available when it is on;
+  off by default): the **only arc of the circle that goes through the three
+  points**, starting at the first one, going through the second and ending
+  at the third. The points are taken in their order (of selection, or of
+  the curve) and turned around so that the **Goal** is the last one: with
+  the Goal on the point picked last, the arc goes from the first point
+  picked, through the second, to the last one. Each Goal gives one of the
+  three arcs through the points. *Oriented*, *Angle* and *Normal Rotation*
+  do not apply to it and are greyed out.
 - *Normal Rotation* (0° by default, no limits): turns the circle or arc about
   the axis through its center, normal to its plane (clockwise when positive,
   as seen from the view).
@@ -213,22 +222,30 @@ straight Bezier segments with **Vector** handles.
   Bezier or Poly), measured in the scene: a circle scaled non-uniformly is an
   ellipse and is refused. The two circles must lie in one common plane (any
   plane), and neither may be fully inside the other.
-- Two splines of **one object**: the lines are added to that object. Two
-  **objects**: they go to a new third object, `Tangents`, with the look and
-  transform of the active one. In Edit Mode the new object is left selected,
-  in Object Mode.
+- **Object Mode**: two splines of **one object**: the lines are added to that
+  object. Two **objects**: they go to a new third object, `Tangents`, with
+  the look and transform of the active one, left selected.
+- **Edit Mode**: the lines are added to the **curve being edited** (the
+  active one, when the two circles are in two curves), and only they are
+  left selected. The Edit Mode is kept.
 
 Options (F9):
 
 - *Add Crossing Tangents*: also the two **inner** tangents, the ones that
   cross between the circles. They only exist when the circles do not overlap;
   otherwise a warning says so and only the outer ones are drawn.
-- *Boolean All*: instead of the lines, the **closed shape** of the two circles
-  and their outer tangents, joined and merged, always as a new object (`Belt`)
-  so the circles are never touched: **Vector** handles along the straight
-  sides, **Aligned** ones on the arcs. The circles (their object or objects)
-  are **hidden**, so only the new shape is left in view. The crossing
-  tangents do not apply.
+- *Connect & Close*: joins the ends of the tangents into **closed shapes**,
+  in the same place the lines would go. The two outer tangents and the two
+  chords between their ends make an **isosceles trapezoid**. The crossing
+  tangents (with *Add Crossing Tangents*) are cut where they cross, and each
+  half is closed with the chord on its circle: **two independent
+  triangles**, one on each circle, that meet at the crossing point. Straight
+  sides with **Vector** handles.
+
+The points where the lines touch the circles are put **on the splines
+themselves**, not on the ideal circle (a Bezier circle strays from it by a
+hair), so the new shapes share those points exactly with the circles and the
+Booleans can work with both.
 
 #### <img src="icons/tangents_from_point.png" width="64" alt=""> Tangents from Point (Edit Mode)
 
@@ -241,30 +258,39 @@ point and touch a circle**.
 - The two lines are **Poly** segments of two points, independent: they are
   not merged with the circle at the points where they touch it. They go into
   the curve being edited and are left selected.
+- *Connect & Close* (F9, off by default): instead of two lines, one closed
+  **Poly triangle**: the two lines are joined by their ends on the circle and
+  merged at the point.
 - The point may be out of the plane of the circle: the lines still touch it
   (they are tangent in 3D). A point **inside** the circle, or on it, has no
   tangents and is refused.
 
 #### <img src="icons/perpendicular.png" width="64" alt=""> Perpendicular from Point (Edit Mode)
 
-Third row of *Create Curves*. From every **selected control point** of a Poly
-or Bezier spline, a new straight segment that leaves the curve
-**perpendicularly**. It is a spline of its own, not connected to the curve:
-always a **Poly** spline, whatever the type of the curve.
+Third row of *Create Curves*. At every **selected control point** of a Poly
+or Bezier spline, a new straight segment **perpendicular** to the curve. It
+is a spline of its own, not connected to the curve: always a **Poly** spline,
+whatever the type of the curve.
 
 - A smooth point (aligned handles, or a Poly point between two segments in
-  line) gets the **perpendicular**; a positive *Length* goes to the **left**
-  of the direction of the curve, as seen from the view.
+  line) gets the **perpendicular**, which goes to the **left** of the
+  direction of the curve, as seen from the view.
 - A **corner** gets the **bisector** instead: of its two handles on a Bezier
-  spline, of its two segments on a Poly one. A positive *Length* goes
-  **outwards**, away from the inside of the corner.
+  spline, of its two segments on a Poly one. It goes **outwards**, away from
+  the inside of the corner.
 - An end point of an open spline gets the perpendicular to its only side.
 - The segment stays in the **plane of the view**, as with the Circles from
   Points: Top/Bottom XY, Front/Back XZ, Right/Left YZ, a free perspective or
   the camera view as Top. *View* in the F9 panel shows it and can change it.
-- *Length* (F9): starts at **a quarter of the length of the spline** of the
-  first selected point; negative values go to the other side. Several
-  points can be done at once, all with the same Length. NURBS are skipped.
+- *Length* (F9, positive): starts at **a quarter of the length of the
+  spline** of the first selected point.
+- *Center* (F9, from 0 to 1, **0.5** by default): where the segment sits on
+  the curve. At **0** it starts at the point (its *IN* end on the curve) and
+  goes the way described above; at **1** it ends at the point (its *OUT* end
+  on the curve), on the other side; at **0.5** it is **centered** on the
+  curve.
+- Several points can be done at once, all with the same Length and Center.
+  NURBS are skipped.
 
 #### <img src="icons/lines_from_points.png" width="64" alt=""> Lines from Points (Edit Mode of a curve or a mesh)
 
@@ -388,24 +414,42 @@ the button is clicked in (*View*, F9):
 | Orthographic Right / Left | the same, at **X = 0** |
 | Perspective, camera or rotated view | **none**: a warning says how many were left out |
 
-### Curve Booleans
+### Booleans & Splits
 
-The tools that make new curves from the selected ones and keep the originals
-as backups, all in Object Mode: the three **booleans** as icon buttons;
-**Symmetrize**, a little apart under them; the **Splits** (Split Active and
-Split All side by side, then Split at Control Points and Split at Stray
-Points); and the two options of the **Sources and Results collections**,
-which all of them share.
+The tools that make new shapes from the selected curves or splines, in
+**Object Mode** and in **Edit Mode**: the three **booleans** as icon buttons;
+**Symmetrize Split**, a little apart under them; the **Splits** (Split Active
+and Split All side by side, then Split at Control Points and Split at Stray
+Points); and the options of the **Backup, Sources and Results**, which all of
+them share.
 
-#### <img src="icons/union.png" width="64" alt=""> Union, Intersection, Difference (Object Mode)
+The two modes work differently:
 
-2D boolean operations between closed curves, as three icon buttons:
+- **Object Mode**: the selected **curve objects**. The results are new
+  objects, and the originals are **always kept** as backups, hidden (or in
+  the Sources collection).
+- **Edit Mode**: the selected **splines of one curve** (a single selected
+  point of a spline is enough to pick it). The results **replace them in that
+  same curve**, and are left **selected**, in Edit Mode; the other splines of
+  the curve are not touched (the new ones go after them, in the order of the
+  curve). Nothing is kept unless *Backup Splines in Edit Mode* is on (see
+  *Backup, Sources and Results*).
 
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Button | Curves | Result |
+The results of the Object Mode are named after the operation, with a number
+that grows with every new one: `Bool_Union_01`, `Bool_Inter_01`,
+`Bool_Diff_01`, `Sym_01`, `Split_01`, `Split_02`...
+
+#### <img src="icons/union.png" width="64" alt=""> Union, Intersection, Difference (Object and Edit Mode)
+
+2D boolean operations between closed shapes, as three icon buttons:
+
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Button | Shapes | Result |
 | :-: | --- | --- | --- |
-| <img src="icons/union.png" width="32" alt=""> | Union | 2 or more | The union of all of them (order and active object do not matter) |
+| <img src="icons/union.png" width="32" alt=""> | Union | 2 or more | The union of all of them (order and active one do not matter) |
 | <img src="icons/intersection.png" width="32" alt=""> | Intersection | Exactly 2 | The common area |
-| <img src="icons/difference.png" width="32" alt=""> | Difference | Exactly 2 | The active curve (selected last) bites the other one |
+| <img src="icons/difference.png" width="32" alt=""> | Difference | Exactly 2 | One bites the other: the active one by default, and **Toggle Goal** (F9) swaps them |
+
+**Object Mode**
 
 - Every spline of the selected objects must be a **closed** Poly or Bezier
   spline. NURBS are not supported. An object may have **several splines**: a
@@ -421,25 +465,55 @@ which all of them share.
   height), as long as they all lie in the **same plane**. They are checked in
   the local space of the active object; if they are not coplanar, nothing is
   done and a message explains why.
-- The result is a new object, `Curve Boolean`, with the transform and the look
-  (bevel, fill, materials...) of the active object. The originals are hidden,
-  never modified (apart from the automatic switch to 2D).
-- If all the curves are Poly the result is Poly. Otherwise it is Bezier, and
+- **Difference**: the **active curve** (selected last) bites the other one.
+  *Toggle Goal* (F9, off by default) swaps them: the other one bites the
+  active one.
+- The result is a new object (`Bool_Union_01`, `Bool_Inter_01`,
+  `Bool_Diff_01`...), with the transform and the look (bevel, fill,
+  materials...) of the active object. The originals are hidden, never
+  modified (apart from the automatic switch to 2D).
+
+**Edit Mode**
+
+- The selected **closed** splines of **one curve**: one selected point (or
+  handle) of a spline is enough. **Union** takes any number of them;
+  **Intersection** and **Difference**, exactly two. If an open spline is
+  among them, or the selection spreads over several curves, nothing is done
+  and a message says why.
+- Every spline is a **shape of its own** (a spline drawn inside another is
+  not a hole here, as it is for a whole object in Object Mode).
+- The selected splines must lie **flat in the local XY plane** of their
+  curve.
+- **Difference**: the **active spline** (the one of the point clicked last)
+  bites the other one, when it is one of the two; otherwise the first one,
+  in the order of the curve. *Toggle Goal* (F9) swaps them.
+- The result replaces the selected splines in the same curve, selected; the
+  other splines are left as they were.
+
+**Both modes**
+
+- If all the shapes are Poly the result is Poly. Otherwise it is Bezier, and
   the Poly sides get Vector handles (as Set Spline Type does).
 - The result can have several contours: disjoint pieces, or holes (a
   Difference that leaves a hole gives an outer and an inner spline).
+- A Difference whose result is empty (the bitten shape is fully covered by
+  the other one) changes nothing, but the F9 panel opens, so *Toggle Goal*
+  can be tried.
 - The shape is exact: intersections are computed on the real Bezier curves (not
   on a polygonal approximation), the curves are cut there with de Casteljau,
-  and edges shared by both curves are handled. Original points that survive
+  and edges shared by both curves are handled, as are shapes that only touch
+  at a point (the closed shapes of *Tangents to 2 Circles* and the circles
+  they touch). Original points that survive
   keep their handle type (Auto handles become Aligned); the new points at the
   crossings are corners with Free handles.
 
-#### <img src="icons/symmetrize.png" width="64" alt=""> Symmetrize (Object Mode)
+#### <img src="icons/symmetrize.png" width="64" alt=""> Symmetrize Split (Object and Edit Mode)
 
-In the *Curve Booleans* group, a little apart under the three booleans.
+In the *Booleans & Splits* group, a little apart under the three booleans.
 **Mirrors one side** of the selected curves onto the other side and **welds**
 them on the axis: the side that is kept is copied, mirrored, and replaces the
-other side.
+other side. It is one more kind of Split: whatever crosses the axis is cut
+there.
 
 Everything is **relative to the view**, which must be an **orthographic axis
 view** (Top, Bottom, Front, Back, Right or Left). In a perspective or camera
@@ -458,13 +532,16 @@ can be picked there. Options (F9):
 
 What it does with each kind of spline:
 
-- **Closed** splines are one region, the way Blender fills them (a shape with
-  holes counts as one): the part on the kept side is joined with its mirror
-  image into one symmetric outline, welded where it meets the axis.
+- **Closed** splines are taken **one by one**: the part of each one on the
+  kept side is joined with its mirror image into one symmetric outline,
+  welded where it meets the axis. Two closed splines that overlap stay two
+  shapes, each one mirrored on its own, and a hole inside a shape comes out
+  as a hole.
 - **Open** splines are cut where they cross the axis; every piece on the kept
   side gets its mirror image, welded to it on the axis. A piece with **both
   ends on the axis** becomes a **closed** spline: draw half a shape with both
-  ends on the axis and Symmetrize closes it.
+  ends on the axis and Symmetrize Split closes it.
+- **Stray points** are mirrored too.
 - A shape that does not reach the axis is left as it is, next to its mirror
   copy. A curve with nothing on the kept side is left untouched, and a
   message says so. When **none** of the curves has anything on the kept side
@@ -474,17 +551,22 @@ What it does with each kind of spline:
 - Points welded on the axis get **Free** handles, so Blender does not realign
   them; the others keep their handle types.
 
-Each selected curve gives a **new curve object** with its look. The
-originals are always kept as **backups**: hidden, or in the Sources
-collection, and the results can go into the Results collection (see *Sources
-and Results collections*). Poly and Bezier curves (Poly when every spline is
-Poly), open or closed, flat in a plane facing the view. NURBS are refused.
+**Object Mode**: each selected curve gives a **new curve object** (`Sym_01`,
+`Sym_02`...) with its look. The originals are always kept as **backups**:
+hidden, or in the Sources collection, and the results can go into the
+Results collection. **Edit Mode**: the selected splines of one curve (open or
+closed; one selected point of a spline is enough) are replaced by the
+symmetric result, selected, in that curve. Poly and Bezier curves (Poly when
+every spline is Poly), open or closed, flat in a plane facing the view. NURBS
+are refused.
 
-#### <img src="icons/split_all.png" width="64" alt=""> Curve Splits (Object Mode)
+#### <img src="icons/split_all.png" width="64" alt=""> Split Active, Split All (Object and Edit Mode)
 
-Cut 2D curves where they cross other selected curves. Unlike the booleans,
+Cut curves where they cross other selected curves. Unlike the booleans,
 open curves are allowed: an open curve can cut a closed one, several open
 curves can cut each other, and so on.
+
+**Object Mode**
 
 - <img src="icons/split_active.png" width="32" alt=""> **Split Active**: only the active curve is cut, by all the others.
 - <img src="icons/split_all.png" width="32" alt=""> **Split All**: every selected curve is cut by all the others, **and where it
@@ -495,18 +577,44 @@ curves can cut each other, and so on.
   loops. It needs **no active object**, so it works right after a Select All
   or a box selection, where none of the selected curves is active.
 - Every piece becomes a new object (`Split_01`, `Split_02`...) with the look
-  and transform of the curve it comes from. Poly pieces stay Poly and Bezier
-  pieces stay Bezier. All the selected originals are hidden (or go into the
-  Sources collection, see below).
+  and transform of the curve it comes from. All the selected originals are
+  hidden (or go into the Sources collection).
 - Same requirements as the booleans: Poly or Bezier curves in the same plane
   (flat 3D curves are turned into 2D automatically). With **Split Active**,
   the splines of one object do not cut each other and loops are not cut; it
   needs two curves and an active one.
-- An end of an open curve that only touches another curve is not a cut. A
-  closed curve cut at a single point becomes one open piece whose ends meet.
+
+**Edit Mode**
+
+- The selected splines of **one curve**, open or closed (one selected point
+  of a spline is enough), flat in its local XY plane.
+- **Split Active**: one of the selected splines is cut by the others, which
+  stay as they are. Which one is the **Goal** (F9): a number from 0 to the
+  number of selected splines minus 1, counted in the order of the curve (if
+  splines 3, 5, 8 and 12 are selected, Goal 0 to 3 picks one of them). A
+  higher value is brought back to the last one, and the field shows it. It
+  starts at the **active spline** (the one of the point clicked last) when it
+  is one of the selected ones, otherwise at 0. If the Goal is not crossed by
+  the others, nothing changes, but the F9 panel opens so another Goal can be
+  picked.
+- **Split All**: every selected spline is cut by the others and where it
+  crosses itself.
+- The pieces replace the splines that are cut, in the same curve, selected.
+
+**Both modes**: Poly pieces stay Poly and Bezier pieces stay Bezier. An end
+of an open curve that only touches another curve is not a cut. A closed
+curve cut at a single point becomes one open piece whose ends meet.
 
 <img src="icons/split_at_points.png" width="32" alt=""> **Split at Control Points** (Object and Edit Mode, under Split Active and
-Split All): Every segment between control points becomes a new curve object (`Split_01`, `Split_02`...). The original stays hidden. Edit Mode: cuts only at the selected points. It uses the Sources / Results collection options. Poly and Bezier only.
+Split All):
+
+- **Object Mode**: every segment between control points of the selected
+  curves becomes a new curve object (`Split_01`, `Split_02`...). The original
+  stays hidden (or goes into the Sources collection).
+- **Edit Mode**: the splines are cut only at the **selected** control points.
+  The pieces stay in the same curve, selected, and the Edit Mode is kept.
+  Several curves being edited can be cut at once.
+- Poly and Bezier only.
 
 **Split at Stray Points** goes right under it.
 
@@ -517,46 +625,56 @@ Point* make), instead of at its own control points:
 
 - **Object Mode**: every selected curve that has stray points on its splines.
   Only the stray points of the **same object** count: stray points cannot be
-  seen in Object Mode, so the ones of other objects are left out. Splines that
-  no stray point touches become objects of their own too, unchanged.
-- **Edit Mode**: only the splines with a **selected control point** are cut,
-  and only by the **selected stray points**. Each curve being edited is cut by
-  its own. It ends in Object Mode, with the pieces selected.
+  seen in Object Mode, so the ones of other objects are left out. Every piece
+  becomes a new object (`Split_01`, `Split_02`...), and splines that no stray
+  point touches become objects of their own too, unchanged. The original is
+  kept, hidden or in the Sources collection.
+- **Edit Mode**: only the splines with a **selected point** are cut, and only
+  by the **selected stray points**. Each curve being edited is cut by its
+  own. The pieces stay in the same curve, selected, and the Edit Mode is
+  kept; the stray points stay there, deselected.
 - "On a spline" means within the **Threshold** of *Global Settings*. In an
   **orthographic** Top, Front, Right... view it is enough for the point to be
   **seen** on the spline (the distance is measured on the screen), even if it
   is in front of or behind it; in a **perspective** or camera view it has to
   really touch it. *View* (F9) keeps the view the button was clicked in.
-- Every piece becomes a new object (`Split_01`, `Split_02`...) and the
-  original is kept as a backup, hidden or in the Sources collection, with the
-  *Place Sources* / *Place Results* options like every other Split. The shape
-  does not change: a Bezier segment is divided with de Casteljau and the new
-  point gets Aligned handles. A stray point near a control point cuts at that
-  point. A closed spline cut at a single point becomes one open piece.
+- The shape does not change: a Bezier segment is divided with de Casteljau
+  and the new point gets Aligned handles. A stray point near a control point
+  cuts at that point. A closed spline cut at a single point becomes one open
+  piece.
 - Poly and Bezier; NURBS splines are never cut (they are kept whole).
 
-#### Sources and Results collections
+#### Backup, Sources and Results
 
-Two options under the Booleans and Splits, shared by all of them (Union,
-Intersection, Difference, Symmetrize, Split Active, Split All, Split at
-Control Points and Split at Stray Points), both off by default:
+Three options under the Booleans and Splits, shared by all of them (Union,
+Intersection, Difference, Symmetrize Split, Split Active, Split All, Split at
+Control Points and Split at Stray Points), all off by default:
 
-- *Place Sources inside a Collection*: the original curves are moved into the
-  collection `Curve Boolean Sources`, and the collection is **excluded from
-  the View Layer** (the checkbox before the eye in the Outliner) instead of
-  hiding the curves one by one. A later operation enables it, adds its own
-  sources and excludes it again. Tick the checkbox to bring them all back.
-- *Place Results inside a Collection*: the new curves go into the collection
-  `Curve Boolean Results`.
+- *Backup Splines in Edit Mode*: in **Edit Mode**, a copy of the splines that
+  an operation changes is kept as a new curve object, `Backup_<name of the
+  curve>`, hidden (or in the Sources collection), with the look and place of
+  the curve. The work goes on in the curve being edited, which is left in
+  Edit Mode. Off, the operations of the Edit Mode change the curve with no
+  copy (Undo still brings it back). It is greyed out in **Object Mode**,
+  where the originals are always kept.
+- *Place Sources inside a Collection*: the original curves (in Object Mode)
+  or the backups (in Edit Mode) are moved into the collection `Curve Boolean
+  Sources`, and the collection is **hidden in the viewport** (the eye of the
+  Outliner) instead of hiding the curves one by one. Click the eye to see
+  them all again. In Edit Mode it is greyed out while *Backup Splines in
+  Edit Mode* is off.
+- *Place Results inside a Collection*: the new curves of the Object Mode go
+  into the collection `Curve Boolean Results`. It is greyed out in Edit Mode,
+  where the results stay in the curve being edited.
 
 If a collection with that name already exists in the scene it is reused,
 wherever it is in the Outliner. Otherwise it is created inside the collection
 of the active source. When both are in the same collection, `Curve Boolean
 Sources` is always kept **above** `Curve Boolean Results` in the Outliner
 (also when the Results collection was made first: it is moved below, keeping
-its View Layer settings and the hidden state of its curves). Without *Place Sources inside a Collection* the sources
-are hidden instead. The visibility of the Results collection is never
-changed.
+its View Layer settings and the hidden state of its curves). Without *Place
+Sources inside a Collection* the sources are hidden instead. The visibility
+of the Results collection is never changed.
 
 ### Shaping Splines
 
@@ -878,7 +996,8 @@ by **length along the curve**:
   slider opens showing **where the point already is** - 0.85, say - so typing
   **0.5** puts it exactly halfway along that stretch.
 - An **end point** has one neighbour and one segment: 0 is where it is now and
-  1 is its neighbour, so sliding it **shortens** the curve at that end.
+  1 is its neighbour, so sliding it **shortens** the curve at that end. Its
+  outer handle follows along (see *Notes*).
 
 Several points can be slid at once, each in its own span, and they all go to
 the same *Position*; the slider then opens at the position of the first one.
@@ -939,8 +1058,11 @@ is not quite the same thing as the distance between points sharing a parameter.
   side of a neighbour becomes **Free** where it is, because Blender would
   otherwise recompute it now that its neighbour has moved, and that would
   change a segment this tool has no business touching.
-- The **outer** handle of an end point belongs to no segment, so it travels
-  with its point (a Vector one is put back at a third of the way).
+- The **outer** handle of an end point belongs to no segment, so it does not
+  shape the curve. As soon as the point slides (any *Position* above 0) it is
+  the **mirror image of the inner handle** (in line with it, and as long), so
+  what is seen follows the curve. At 0 nothing moves. A Vector one is put
+  back at a third of the way, which is that mirror image already.
 - **Poly** splines are refused: sliding a point along the two legs would cut
   the corner instead of keeping the shape, which is a different tool. **NURBS**
   splines are refused too, since their control points are not even on the
@@ -1068,16 +1190,17 @@ Closed by default. In the panel they go from whole splines to points: **Select A
 **Separate All Selected**; **Subdivide**, **Simplify** and **Dissolve** on one
 row; **Set First Point** and **Invert Direction** on another; the pairs on
 one row (**Pair** *Snap* / *Merge* / *Swap*) and the merges (see *Pairs and
-Merges*); and last, **Resolution** with **Set All**, and **Cyclic** with
-**Toggle All** (see *Resolution and Cyclic*).
+Merges*); and last, **2D** / **3D** with **Set All**, **Resolution** with
+**Set All**, and **Cyclic** with **Toggle All** (see *2D / 3D, Resolution and
+Cyclic*).
 
 #### <img src="icons/utilities.png" width="64" alt=""> Splines and Points
 
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Tool | Where | What it does |
 | :-: | --- | --- | --- |
-| <img src="icons/select_polys.png" width="32" alt=""> | Select All by Type > Polys | Edit | Selects every **Poly** spline, **and only those**, in every curve being edited. *Extend* (F9) keeps what was already selected. |
-| <img src="icons/select_beziers.png" width="32" alt=""> | Select All by Type > Beziers | Edit | The same, for the **Bezier** splines. |
-| <img src="icons/select_nurbs.png" width="32" alt=""> | Select All by Type > NURBS | Edit | The same, for the **NURBS** splines. |
+| <img src="icons/select_polys.png" width="32" alt=""> | Select All by Type > Polys | Edit | Selects every **Poly** spline, **and only those**, in every curve being edited. The **stray points** (splines with a single point or shorter than the Threshold) are left out, whatever their type: *Strays* is the entry for them. *Extend* (F9) keeps what was already selected. |
+| <img src="icons/select_beziers.png" width="32" alt=""> | Select All by Type > Beziers | Edit | The same, for the **Bezier** splines (stray points left out). |
+| <img src="icons/select_nurbs.png" width="32" alt=""> | Select All by Type > NURBS | Edit | The same, for the **NURBS** splines (stray points left out). |
 | <img src="icons/select_strays.png" width="32" alt=""> | Select All by Type > Strays | Edit | Selects the stray points, **and only those**, so they can be checked before deleting them (X): in a curve, the splines with a **single point** or **shorter than the Threshold** (the same ones Remove Strays takes); in a mesh, the **loose vertices** (no edge). Every curve or mesh being edited. This is the entry of the panel; *Remove Strays* is still there for scripts and F3 search. |
 | <img src="icons/remove_strays.png" width="32" alt=""> | Remove Strays | Object / Edit | Removes the stray splines that booleans, offsets and splits can leave behind: those with a **single point** and those **shorter than the Threshold**, measured in world space (so the scale of the object counts). Object Mode: every spline of the selected curves. Edit Mode: every spline of the curves being edited, **selected or not**, because a stray spline is hard to see and harder to pick. A curve whose splines are all strays is left with none, and the report says so. Of a NURBS spline the control polygon is measured, which is never shorter than the curve, so one is only removed when it really is a stray. Any curve type. In the **Edit Mode of a mesh** it removes its **stray vertices** instead (those with no edge), in every mesh being edited, selected or not. |
 | <img src="icons/separate.png" width="32" alt=""> | Separate All Selected | Object / Edit | **Object Mode**: every selected curve with several splines keeps its first one and sends each of the others to a new object of its own (`<name>_01`, `<name>_02`...), with its look and transform; nothing is hidden, and the originals and the new objects end up selected. **Edit Mode**: every selected spline goes to a **new curve object of its own** (`c_01`, `c_02`...), the way *Separate by Loose Parts* does with the islands of a mesh (Blender's own *Separate* puts them all in one object instead, and cuts a partly selected spline). A spline with only some of its points selected goes whole. The splines leave the curve they were in, which keeps the ones that were not selected; when **every** spline is selected, one is left behind so the object is not left empty. Ends in Object Mode with the new objects selected, and nothing is hidden. Any curve type. |
@@ -1162,9 +1285,18 @@ Swap Pair: like them, it is out of the reach of the Threshold.
 
 The *Threshold* these merges use is in **Global Settings** (see below).
 
-#### <img src="icons/set_resolution.png" width="64" alt=""> Resolution and Cyclic
+#### <img src="icons/set_resolution.png" width="64" alt=""> 2D / 3D, Resolution and Cyclic
 
-The last two rows of Utilities.
+The last three rows of Utilities.
+
+**2D** / **3D** / **Set All** (Object and Edit Mode, three buttons of the same
+width, under Remove Doubles): **2D** and **3D** show whether the **active
+curve** is a 2D or a 3D curve (the setting of *Object Data > Shape*), and
+clicking one changes it, so there is no need to go to the Object Data
+properties to check it. **Set All** gives that same setting to **every
+selected curve** at once (Object Mode), or to every curve being edited (Edit
+Mode). As in Blender, a 3D curve made 2D is flattened onto its local XY
+plane. Any curve type.
 
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Tool | Where | What it does |
 | :-: | --- | --- | --- |
@@ -1231,8 +1363,8 @@ the settings that tools of several sections share:
 
 - **Threshold** (default 0.001 m): how close two points, or a point and a
   spline, have to be to count as the same place. Used by Merge by Distance,
-  Join & Merge, Remove Doubles, Select All by Type > Strays and Remove Strays
-  (Utilities) and by Split at Stray Points (Curve Booleans).
+  Join & Merge, Remove Doubles, Select All by Type (which strays to pick, or
+  to leave out of Polys, Beziers and NURBS) and Remove Strays (Utilities) and by Split at Stray Points (Booleans & Splits).
 
 ### Documentation
 
@@ -1300,12 +1432,23 @@ dev/test_phase15.py       tests of Goal, Normal Rotation, Add Helper Points,
                           Inscribed, Tangent to 2 Segments, Select Strays, the
                           order of the F9 options, To Selected Point, Booleans
                           with holes and Separate in Object Mode (bpy)
+dev/test_phase24.py       tests of Symmetrize with nothing on the kept side,
+                          the order of the panel and the palette icons (bpy)
+dev/test_phase26.py       tests of the Booleans and Splits in Edit Mode (Backup
+                          Splines in Edit Mode, Goal, Toggle Goal), the names
+                          of the results, the Sources collection hidden in the
+                          viewport, Select All by Type without the strays,
+                          2D / 3D, Connect & Close of Tangents from Point and
+                          the Capable Arc (bpy)
 ```
 
 `etr_curves_toolkit/curve_engine.py` is the pure-Python 2D engine of the
 booleans and splits: exact Bezier intersections (subdivision + Newton),
 overlap detection, exact even-odd point-in-region test, cutting with de
-Casteljau and chaining the kept pieces into loops.
+Casteljau and chaining the kept pieces into loops. A region whose loops cross
+each other (or themselves) is first turned into loops that do not
+(`simplify_region()`), and the slivers left between two nearly tangent
+crossings are dropped.
 
 `etr_curves_toolkit/offset_engine.py` is the pure-Python 2D engine of the
 offset: offset of each segment (exact for lines, fitted cubics for curves, cut
@@ -1352,7 +1495,7 @@ Points at Intersections (the crossings of `curve_engine`, found in the plane
 of the view or in the plane that fits the curves best, then checked in 3D)
 and Points Along Curve.
 
-`etr_curves_toolkit/symmetrize.py` holds Symmetrize: the plane of the view
+`etr_curves_toolkit/symmetrize.py` holds Symmetrize Split: the plane of the view
 centered on the mirror axis, the intersection of the closed splines with a
 half-plane and its union with its mirror image (both with `curve_engine`),
 and the cut, mirror and weld of the open ones.
@@ -1368,8 +1511,8 @@ axis), the exact shortest closed path (Held-Karp, up to 12 points) and, beyond
 that, nearest neighbour plus 2-opt and Or-opt.
 
 Run the tests: `python dev/test_phase1.py <folder containing etr_curves_toolkit>`
-(same for the other sixteen). The fifteen `bpy` suites also run against the
-`bpy` wheel of the matching Blender version (`pip install bpy==5.2.3`), with no
+(same for the other nineteen). The eighteen `bpy` suites also run against the
+`bpy` wheel of the matching Blender version (`pip install bpy==5.2.4`), with no
 Blender installed.
 
 Build the extension: `blender --command extension build --source-dir etr_curves_toolkit`
