@@ -367,8 +367,6 @@ class ETR_OT_curve_toolkit_extend(bpy.types.Operator):
         default=0.0,
         min=-2.0 * math.pi,
         max=2.0 * math.pi,
-        soft_min=-math.pi,
-        soft_max=math.pi,
         subtype='ANGLE',
         unit='ROTATION',
     )

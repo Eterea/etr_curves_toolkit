@@ -212,8 +212,8 @@ Either way, *Toggle Goal* and *Goal* change it on the spot.
 #### <img src="icons/tangents_2_circles.png" width="64" alt=""> Tangents to 2 Circles (Object and Edit Mode)
 
 Third row of *Create Curves*. Draws the **straight lines tangent to two
-circles**: the two outer ones (the lines of a belt around two pulleys), as
-straight Bezier segments with **Vector** handles.
+circles**, as straight Bezier segments with **Vector** handles, or closed
+**loops** made of those lines and arcs of the circles.
 
 - The two circles can be **two curve objects** (one closed spline each), **one
   curve object with two splines** (Object Mode), or **two splines picked in
@@ -222,45 +222,59 @@ straight Bezier segments with **Vector** handles.
   Bezier or Poly), measured in the scene: a circle scaled non-uniformly is an
   ellipse and is refused. The two circles must lie in one common plane (any
   plane), and neither may be fully inside the other.
-- **Object Mode**: two splines of **one object**: the lines are added to that
-  object. Two **objects**: they go to a new third object, `Tangents`, with
-  the look and transform of the active one, left selected.
-- **Edit Mode**: the lines are added to the **curve being edited** (the
-  active one, when the two circles are in two curves), and only they are
-  left selected. The Edit Mode is kept.
+- **Object Mode**: the new geometry always goes to a **new third object**,
+  `Tangents`, with the look and transform of the active one, left selected
+  and active. The circles are not removed nor hidden, only deselected.
+- **Edit Mode**: the new geometry is added to the **curve being edited** (the
+  active one, when the two circles are in two curves), and only it is left
+  selected. The circles stay, deselected. The Edit Mode is kept.
 
 Options (F9):
 
-- *Add Crossing Tangents*: also the two **inner** tangents, the ones that
-  cross between the circles. They only exist when the circles do not overlap;
-  otherwise a warning says so and only the outer ones are drawn.
-- *Connect & Close*: joins the ends of the tangents into **closed shapes**,
-  in the same place the lines would go. The two outer tangents and the two
-  chords between their ends make an **isosceles trapezoid**. The crossing
-  tangents (with *Add Crossing Tangents*) are cut where they cross, and each
-  half is closed with the chord on its circle: **two independent
-  triangles**, one on each circle, that meet at the crossing point. Straight
-  sides with **Vector** handles.
+- *Main Tangents* (on by default): the two **outer** tangents, the ones that
+  do not cross (the lines of a belt around two pulleys).
+- *Crossing Tangents* (off by default): the two **inner** tangents, the ones
+  that cross between the circles. They only exist when the circles do not
+  overlap; otherwise a warning says so. With both off, nothing is drawn (a
+  warning says so, and the options stay in F9).
+- *Create External Loop(s)* (off by default): instead of the lines, one
+  **closed loop** for each kind of tangents that is on: the two tangents and
+  the arcs of the circles that face **away from the other circle**. With the
+  main tangents it is the belt; with the crossing tangents, a **figure of
+  eight** (no point is added where the two tangents cross).
+- *Create Internal Loop(s)* (off by default): the same, with the arcs that
+  **face the other circle**. With both loop options on, both loops are made
+  (up to four, with both kinds of tangents).
 
 The points where the lines touch the circles are put **on the splines
 themselves**, not on the ideal circle (a Bezier circle strays from it by a
-hair), so the new shapes share those points exactly with the circles and the
-Booleans can work with both.
+hair), and the arcs of the loops are **cut from the circles themselves** (the
+same cubics, split where the tangents touch them; the points of the circle
+in between are kept). So a loop lies exactly on its circles, and the
+Booleans can work with both. Handles of the loops: **Vector** on the side of
+a line, **Aligned** inside an arc, **Free** on the arc side where a line
+meets it. The internal loops lie outside both circles (they only share an
+arc with each).
 
 #### <img src="icons/tangents_from_point.png" width="64" alt=""> Tangents from Point (Edit Mode)
 
 Third row of *Create Curves*. Draws the **two straight lines that start at a
-point and touch a circle**.
+point and touch a circle**. Edit Mode only: a single point can hardly be
+picked in Object Mode.
 
 - Select **one point** (a stray point, or a control point of any spline) and
   **one or more points of the circle** (a closed Poly or Bezier spline whose
   shape is a circle, as for Tangents to 2 Circles).
 - The two lines are **Poly** segments of two points, independent: they are
   not merged with the circle at the points where they touch it. They go into
-  the curve being edited and are left selected.
-- *Connect & Close* (F9, off by default): instead of two lines, one closed
-  **Poly triangle**: the two lines are joined by their ends on the circle and
-  merged at the point.
+  the curve being edited and are left selected; the circle and the point
+  stay, deselected.
+- *Create External Loop* (F9, off by default): instead of the two lines, one
+  closed **Bezier loop**: the two lines and the arc of the circle that faces
+  **away from the point** (the long one).
+- *Create Internal Loop* (F9, off by default): the same with the arc that
+  **faces the point** (the short one). With both on, both loops are made. The
+  arcs are cut from the circle itself, as in Tangents to 2 Circles.
 - The point may be out of the plane of the circle: the lines still touch it
   (they are tangent in 3D). A point **inside** the circle, or on it, has no
   tangents and is refused.
@@ -502,7 +516,7 @@ that grows with every new one: `Bool_Union_01`, `Bool_Inter_01`,
 - The shape is exact: intersections are computed on the real Bezier curves (not
   on a polygonal approximation), the curves are cut there with de Casteljau,
   and edges shared by both curves are handled, as are shapes that only touch
-  at a point (the closed shapes of *Tangents to 2 Circles* and the circles
+  at a point or share an arc (the loops of *Tangents to 2 Circles* and the circles
   they touch). Original points that survive
   keep their handle type (Auto handles become Aligned); the new points at the
   crossings are corners with Free handles.
@@ -942,9 +956,10 @@ grows.)
   the turn from the angle below.
 - *Curvature* angle (Bezier, Manual only): the **turn of the arc itself**, in
   degrees. 0 leaves straight along the tangent, positive turns to the **right**
-  and negative to the **left**, up to a **full circle** either way (soft limits
-  at 180 degrees, so dragging stays usable and a wider turn is typed in). The
-  angle is exact, so this also draws arcs of 30, 45, 90 or 120 degrees, and at
+  and negative to the **left**, up to a **full circle** either way (360
+  degrees, also when dragging: there are no soft limits). A wider turn would
+  only wind the arc over itself, so 360 is the hard limit; for spiral-like
+  shapes, extend again from the new end. The angle is exact, so this also draws arcs of 30, 45, 90 or 120 degrees, and at
   360 degrees the new end point lands on the one it grew from (the spline stays
   open).
 - *Direction* angle (Poly): the straight piece leaves in the direction of the
@@ -1438,8 +1453,12 @@ dev/test_phase26.py       tests of the Booleans and Splits in Edit Mode (Backup
                           Splines in Edit Mode, Goal, Toggle Goal), the names
                           of the results, the Sources collection hidden in the
                           viewport, Select All by Type without the strays,
-                          2D / 3D, Connect & Close of Tangents from Point and
-                          the Capable Arc (bpy)
+                          2D / 3D and the Capable Arc (bpy)
+dev/test_phase27.py       tests of the Main / Crossing Tangents and External /
+                          Internal Loops of Tangents to 2 Circles (new object
+                          in Object Mode, Booleans with the loops), the loops
+                          of Tangents from Point and the Curvature of Extend
+                          without soft limits (bpy)
 ```
 
 `etr_curves_toolkit/curve_engine.py` is the pure-Python 2D engine of the

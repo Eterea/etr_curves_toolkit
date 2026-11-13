@@ -11,23 +11,29 @@ Two circles (closed splines whose shape is a circle) are picked:
   - Edit Mode: the two splines that have selected points (any point of a
     spline picks it), in one curve or in two curves being edited.
 
-The button draws the two outer tangents (the "belt" lines) as straight
-Bezier segments with Vector handles. Options (F9):
+Options (F9):
 
-  - Add Crossing Tangents: the two inner tangents too, the ones that cross
-    between the circles (only when the circles do not overlap).
-  - Connect & Close: the ends of the tangents are joined into closed shapes:
-    the two outer tangents and the chords between their ends make an
-    isosceles trapezoid; the crossing tangents, cut where they cross, and the
-    chord on each circle make two triangles that meet at that point. Straight
-    sides with Vector handles.
+  - Main Tangents (on by default): the two outer tangents (the "belt" lines),
+    the ones that do not cross.
+  - Crossing Tangents (off by default): the two inner tangents, the ones that
+    cross between the circles (only when the circles do not overlap).
+  - Create External Loop(s) / Create Internal Loop(s) (off by default):
+    instead of the lines, closed loops made of the tangents and the arcs of
+    the circles between their ends: the arcs that face away from the other
+    circle (external) or the ones that face it (internal). One loop for each
+    kind of tangents that is on; with the crossing tangents the loop is a
+    figure of eight (no point where the tangents cross).
 
-Where the lines go:
-  - Object Mode: when both circles are splines of one object, into that
-    object; when they are in two objects, into a new third object
-    ("Tangents"), with the look and transform of the active one.
+The lines are straight Bezier segments with Vector handles. The arcs of the
+loops are cut from the circles themselves (the same cubics, split where the
+tangents touch them), so a loop lies exactly on its circles.
+
+Where the new geometry goes (the circles are never removed nor hidden, only
+deselected):
+  - Object Mode: into a new third object ("Tangents"), with the look and
+    transform of the active one, left selected and active.
   - Edit Mode: into the curve being edited (the active one, when the circles
-    are in two curves), and they are left selected.
+    are in two curves), and it is left selected.
 
 The circles may be anywhere and rotated, but they must lie in one common
 plane, and neither may be fully inside the other.
@@ -37,11 +43,13 @@ Tangents from Point (Edit Mode)
     more points of a circle are selected. The button draws the two straight
     lines that start at that point and touch the circle, as two Poly
     segments of two points each, independent (not merged with the circle),
-    in the curve being edited. With Connect & Close (F9) they become one
-    closed Poly triangle: the point and the two points where the lines
-    touch the circle. The point may be out of the plane of the
-    circle: the lines still touch it (they are tangent in 3D). A point
-    inside the circle, or on it, has no tangents.
+    in the curve being edited. With Create External Loop / Create Internal
+    Loop (F9) they become closed Bezier loops instead: the two lines and the
+    arc of the circle between the points where they touch it, the one that
+    faces away from the point (external) or the one that faces it (internal).
+    The point may be out of the plane of the circle: the lines still touch it
+    (they are tangent in 3D). A point inside the circle, or on it, has no
+    tangents.
 """
 
 import math
@@ -96,12 +104,68 @@ class FittedCircle:
 
     def snap(self, p):
         """The point of the spline closest to p (p itself without cubics)."""
+        if not self.cubics:
+            return tuple(p)
+        i, t = self.locate(p)
+        return tuple(geo.bezier_point(*self.cubics[i], t))
+
+    def locate(self, p):
+        """Where the point of the spline closest to p is, as a position
+        along the spline: (index of the cubic, parameter in it)."""
         best = None
-        for cubic in self.cubics:
+        for i, cubic in enumerate(self.cubics):
             t, d = _closest_on_cubic(cubic, p)
-            if best is None or d < best[1]:
-                best = (geo.bezier_point(*cubic, t), d)
-        return tuple(p) if best is None else tuple(best[0])
+            if best is None or d < best[2]:
+                best = (i, t, d)
+        return best[0], best[1]
+
+    def _position(self, p):
+        """locate() as one number: index + parameter, in [0, n)."""
+        i, t = self.locate(p)
+        return (i + t) % len(self.cubics)
+
+    def _walk(self, s0, s1):
+        """The cubics of the spline from position s0 forwards to s1 (pieces of
+        cubics where they start or end inside one)."""
+        n = len(self.cubics)
+        span = (s1 - s0) % n
+        out = []
+        k = math.floor(s0)
+        while k < s0 + span:
+            a, b = max(s0, k), min(s0 + span, k + 1)
+            if b - a > 1e-9:
+                out.append(_sub_cubic(self.cubics[k % n], a - k, b - k))
+            k += 1
+        return out
+
+    def arc(self, a, b, other, external):
+        """The arc of the spline from a to b (two points on it), as cubics in
+        the direction a -> b.
+
+        Of the two arcs between a and b, the external one is the one that
+        faces away from `other` (a point in or near the plane of the circle:
+        the center of the other circle, or the point of Tangents from
+        Point), and the internal one the one that faces it. a and b are
+        symmetric about the line from the center to `other`, so each arc
+        holds one of the two points where that line crosses the circle: the
+        external one holds the far one.
+        """
+        n = len(self.cubics)
+        toward = geo.sub(other, self.center)
+        toward = geo.sub(toward, geo.mul(self.normal, geo.dot(toward, self.normal)))
+        toward = geo.normalized(toward) or (1.0, 0.0, 0.0)
+        far = self._position(geo.sub(self.center, geo.mul(toward, self.radius)))
+        sa, sb = self._position(a), self._position(b)
+        holds_far = (far - sa) % n < (sb - sa) % n
+        if holds_far == external:
+            cubics = self._walk(sa, sb)
+        else:
+            cubics = [tuple(reversed(c)) for c in reversed(self._walk(sb, sa))]
+        # The ends exactly where the lines end.
+        if cubics:
+            cubics[0] = (tuple(a),) + tuple(cubics[0][1:])
+            cubics[-1] = tuple(cubics[-1][:3]) + (tuple(b),)
+        return cubics
 
 
 #: Samples per cubic before the closest point is refined.
@@ -130,6 +194,25 @@ def _closest_on_cubic(cubic, p):
             f2 = dist(x2)
     t = 0.5 * (lo + hi)
     return t, dist(t)
+
+
+def _split_cubic(cubic, t):
+    """De Casteljau: the two halves of a cubic (p0, h0, h1, p1) at t."""
+    p0, h0, h1, p1 = cubic
+    a, b, c = geo.lerp(p0, h0, t), geo.lerp(h0, h1, t), geo.lerp(h1, p1, t)
+    d, e = geo.lerp(a, b, t), geo.lerp(b, c, t)
+    m = geo.lerp(d, e, t)
+    return (tuple(p0), a, d, m), (m, e, c, tuple(p1))
+
+
+def _sub_cubic(cubic, t0, t1):
+    """The piece of a cubic between the parameters t0 < t1."""
+    if t1 < 1.0 - 1e-12:
+        cubic = _split_cubic(cubic, t1)[0]
+        t0 = t0 / t1
+    if t0 > 1e-12:
+        cubic = _split_cubic(cubic, t0)[1]
+    return tuple(tuple(c) for c in cubic)
 
 
 def _world_cubics(data, mw):
@@ -255,14 +338,13 @@ class Pair:
         return geo.add(geo.mul(self.u, math.cos(angle)), geo.mul(self.v, math.sin(angle)))
 
     def outer(self):
-        """The two outer tangents, as ((point on a, point on b), angle), the
-        angle being the one of their common radial direction."""
+        """The two outer (main) tangents, as (point on a, point on b)."""
         alpha = math.acos(max(-1.0, min(1.0, (self.a.radius - self.b.radius) / self.d)))
         out = []
         for angle in (alpha, -alpha):
             n = self.direction(angle)
-            out.append(((self.a.snap(geo.add(self.a.center, geo.mul(n, self.a.radius))),
-                         self.b.snap(geo.add(self.b.center, geo.mul(n, self.b.radius)))), angle))
+            out.append((self.a.snap(geo.add(self.a.center, geo.mul(n, self.a.radius))),
+                        self.b.snap(geo.add(self.b.center, geo.mul(n, self.b.radius)))))
         return out
 
     def crossing(self):
@@ -278,25 +360,6 @@ class Pair:
                         self.b.snap(geo.sub(self.b.center, geo.mul(n, self.b.radius)))))
         return out
 
-    def crossing_point(self, inner):
-        """Where the two crossing tangents (as given by crossing()) cross.
-
-        On ideal circles it is the point of the line of the centers that
-        divides it in the ratio of the radii; with the ends put on the real
-        splines the two lines are crossed instead, so the two triangles meet
-        exactly at a point of both."""
-        (a0, b0), (a1, b1) = inner
-        d0, d1 = geo.sub(b0, a0), geo.sub(b1, a1)
-        # a0 + s d0 = a1 + t d1, solved in the plane (least squares in 3D).
-        w = geo.sub(a1, a0)
-        d00, d01, d11 = geo.dot(d0, d0), geo.dot(d0, d1), geo.dot(d1, d1)
-        den = d00 * d11 - d01 * d01
-        if abs(den) < 1e-300:
-            k = self.a.radius / (self.a.radius + self.b.radius)
-            return geo.add(self.a.center, geo.mul(self.u, self.d * k))
-        s_ = (geo.dot(w, d0) * d11 - geo.dot(w, d1) * d01) / den
-        return geo.add(a0, geo.mul(d0, s_))
-
 
 def segment(a, b):
     """A straight Bezier segment from a to b, with Vector handles."""
@@ -309,17 +372,45 @@ def segment(a, b):
     return sd.SplineData('BEZIER', points, False, {})
 
 
-def polygon(points):
-    """A closed Bezier spline through `points`, straight sides with Vector
-    handles."""
-    n = len(points)
-    out = []
-    for i, co in enumerate(points):
-        prev, nxt = points[i - 1], points[(i + 1) % n]
-        out.append(sd.PointData(co=co, hl=geo.lerp(co, prev, 1.0 / 3.0),
-                                hr=geo.lerp(co, nxt, 1.0 / 3.0), hlt='VECTOR', hrt='VECTOR',
-                                select=True, select_left=True, select_right=True))
-    return sd.SplineData('BEZIER', out, True, {})
+def line_cubic(a, b):
+    """A straight cubic from a to b, its handles at the thirds."""
+    return (tuple(a), geo.lerp(a, b, 1.0 / 3.0), geo.lerp(a, b, 2.0 / 3.0), tuple(b))
+
+
+def _is_straight(cubic):
+    """True when a cubic is a straight line with its handles at the thirds,
+    which is what a Vector handle gives."""
+    p0, h0, h1, p1 = cubic
+    size = geo.distance(p0, p1)
+    tol = 1e-6 * max(size, 1e-9)
+    return (geo.distance(h0, geo.lerp(p0, p1, 1.0 / 3.0)) < tol
+            and geo.distance(h1, geo.lerp(p0, p1, 2.0 / 3.0)) < tol)
+
+
+def loop(cubics):
+    """A closed Bezier spline from a chain of cubics, each one starting where
+    the one before it ends, selected.
+
+    Handle types: Vector on the side of a straight piece; Aligned where two
+    curved pieces go on smoothly (inside an arc); Free elsewhere (where a
+    line meets an arc: tangent, but left as it is)."""
+    cubics = [c for c in cubics if geo.distance(c[0], c[3]) > 1e-9
+              or geo.distance(c[0], c[1]) > 1e-9 or geo.distance(c[0], c[2]) > 1e-9]
+    points = []
+    for k, cubic in enumerate(cubics):
+        prev = cubics[k - 1]
+        co, hl, hr = cubic[0], prev[2], cubic[1]
+        in_straight, out_straight = _is_straight(prev), _is_straight(cubic)
+        hlt = 'VECTOR' if in_straight else 'FREE'
+        hrt = 'VECTOR' if out_straight else 'FREE'
+        if not in_straight and not out_straight:
+            back = geo.normalized(geo.sub(hl, co))
+            ahead = geo.normalized(geo.sub(hr, co))
+            if back is not None and ahead is not None and geo.dot(back, ahead) < -1.0 + 1e-6:
+                hlt = hrt = 'ALIGNED'
+        points.append(sd.PointData(co=tuple(co), hl=tuple(hl), hr=tuple(hr), hlt=hlt, hrt=hrt,
+                                   select=True, select_left=True, select_right=True))
+    return sd.SplineData('BEZIER', points, True, {})
 
 
 def transformed(data, matrix):
@@ -346,22 +437,34 @@ def _deselect_all(curve):
 # -----------------------------------------------------------------------------
 
 class ETR_OT_curve_toolkit_tangents_2_circles(bpy.types.Operator):
-    """Draw the straight lines tangent to 2 circles (2 curve objects, or 2 splines of one curve). Options: the crossing tangents too, and Connect & Close, which joins their ends into closed shapes"""
+    """Draw the straight lines tangent to 2 circles (2 curve objects, or 2 splines of one curve): the main ones and/or the crossing ones, or closed loops made of them and the external or internal arcs of the circles"""
     bl_idname = "etr.curve_toolkit_tangents_2_circles"
     bl_label = "Tangents to 2 Circles"
     bl_options = {'REGISTER', 'UNDO'}
 
+    main: BoolProperty(
+        name="Main Tangents",
+        description="The two outer tangents, the ones that do not cross",
+        default=True,
+    )
     crossing: BoolProperty(
-        name="Add Crossing Tangents",
-        description="Also draw the two inner tangents, the ones that cross between the "
-                    "circles (only when the circles do not overlap)",
+        name="Crossing Tangents",
+        description="The two inner tangents, the ones that cross between the circles "
+                    "(only when the circles do not overlap)",
         default=False,
     )
-    connect_close: BoolProperty(
-        name="Connect & Close",
-        description="Join the ends of the tangents into closed shapes: the outer ones into "
-                    "an isosceles trapezoid, the crossing ones into two triangles that meet "
-                    "where they cross",
+    external_loop: BoolProperty(
+        name="Create External Loop(s)",
+        description="Instead of the lines, a closed loop for each kind of tangents that is "
+                    "on: the tangents and the arcs of the circles that face away from the "
+                    "other circle (a figure of eight with the crossing tangents)",
+        default=False,
+    )
+    internal_loop: BoolProperty(
+        name="Create Internal Loop(s)",
+        description="Instead of the lines, a closed loop for each kind of tangents that is "
+                    "on: the tangents and the arcs of the circles that face the other circle "
+                    "(a figure of eight with the crossing tangents)",
         default=False,
     )
 
@@ -378,8 +481,10 @@ class ETR_OT_curve_toolkit_tangents_2_circles(bpy.types.Operator):
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
+        layout.prop(self, "main")
         layout.prop(self, "crossing")
-        layout.prop(self, "connect_close")
+        layout.prop(self, "external_loop")
+        layout.prop(self, "internal_loop")
 
     def execute(self, context):
         try:
@@ -417,42 +522,48 @@ class ETR_OT_curve_toolkit_tangents_2_circles(bpy.types.Operator):
         return picked
 
     def _shapes(self, pair):
-        """SplineData (world space) to write."""
-        outer = [points for points, _ in pair.outer()]
-        inner = []
+        """SplineData (world space) to write; [] (with a warning) when there
+        is nothing to draw."""
+        sets = []
+        if self.main:
+            sets.append(pair.outer())
         if self.crossing:
             inner = pair.crossing()
-            if not inner:
+            if inner:
+                sets.append(inner)
+            else:
                 self.report({'WARNING'}, "The circles overlap: there are no crossing tangents")
-        if not self.connect_close:
-            return [segment(*points) for points in outer + inner]
-        # The outer tangents and the two chords between their ends: an
-        # isosceles trapezoid. The crossing ones, cut where they cross, and
-        # the chord on each circle: two triangles.
-        (a_top, b_top), (a_bottom, b_bottom) = outer
-        datas = [polygon([a_top, b_top, b_bottom, a_bottom])]
-        if inner:
-            (a0, b0), (a1, b1) = inner
-            x = pair.crossing_point(inner)
-            datas += [polygon([a0, x, a1]), polygon([b0, x, b1])]
+        if not self.main and not self.crossing:
+            self.report({'WARNING'}, "Nothing to draw: turn on Main Tangents or Crossing "
+                                     "Tangents")
+        kinds = [k for k, on in ((True, self.external_loop), (False, self.internal_loop)) if on]
+        if not kinds:
+            return [segment(*points) for lines in sets for points in lines]
+        # Each loop: the arc of the first circle between the ends of the two
+        # tangents, the second tangent, the arc of the second circle back, and
+        # the first tangent. With the crossing tangents the two tangents cross:
+        # a figure of eight.
+        datas = []
+        for (a0, b0), (a1, b1) in sets:
+            for external in kinds:
+                datas.append(loop(pair.a.arc(a0, a1, pair.b.center, external)
+                                  + [line_cubic(a1, b1)]
+                                  + pair.b.arc(b1, b0, pair.a.center, external)
+                                  + [line_cubic(b0, a0)]))
         return datas
 
     # -- Object Mode ---------------------------------------------------------
 
     def _object(self, context):
+        """The new splines go into a new third object; the circles stay, only
+        deselected."""
         picked = self._picked_objects(context)
         pair = Pair(*(circle_of(obj, data) for obj, data in picked))
         datas = self._shapes(pair)
+        if not datas:
+            return {'FINISHED'}
         (obj_a, _), (obj_b, _) = picked
         active = context.active_object if context.active_object in (obj_a, obj_b) else obj_a
-
-        if obj_a is obj_b:
-            to_local = world_matrix(obj_a).inverted()
-            for d in datas:
-                sd.write_spline(obj_a.data, transformed(d, to_local))
-            self.report({'INFO'}, f"Added {len(datas)} spline(s) to '{obj_a.name}'")
-            return {'FINISHED'}
-
         to_local = world_matrix(active).inverted()
         result = new_curve_object(context, active, [transformed(d, to_local) for d in datas],
                                   "Tangents")
@@ -467,19 +578,23 @@ class ETR_OT_curve_toolkit_tangents_2_circles(bpy.types.Operator):
 
     def _edit(self, context):
         """The new splines go into the curve being edited (the active one,
-        when the circles are in two curves), selected."""
+        when the circles are in two curves), selected; the circles stay, only
+        deselected."""
         active = context.active_object
         with edit_scope(context) as objs:
             picked = self._picked_splines(objs)
             pair = Pair(*(circle_of(obj, data) for obj, data in picked))
             datas = self._shapes(pair)
+            if not datas:
+                return {'FINISHED'}
             (obj_a, _), (obj_b, _) = picked
             target = active if active in (obj_a, obj_b) else obj_a
             to_local = world_matrix(target).inverted()
             for o in objs:
                 _deselect_all(o.data)
             for d in datas:
-                sd.write_spline(target.data, transformed(d, to_local))
+                spline = sd.write_spline(target.data, transformed(d, to_local))
+            target.data.splines.active = spline
         self.report({'INFO'}, f"Added {len(datas)} spline(s) to '{target.name}'")
         return {'FINISHED'}
 
@@ -523,15 +638,21 @@ def _try_circle(obj, data):
 
 
 class ETR_OT_curve_toolkit_tangents_from_point(bpy.types.Operator):
-    """Draw the two straight lines from a selected point that touch a circle (select the point and one or more points of the circle). Two Poly segments, in the same curve, or a closed triangle with Connect & Close. Edit Mode"""
+    """Draw the two straight lines from a selected point that touch a circle (select the point and one or more points of the circle): two Poly segments in the same curve, or closed loops with the external or internal arc of the circle. Edit Mode"""
     bl_idname = "etr.curve_toolkit_tangents_from_point"
     bl_label = "Tangents from Point"
     bl_options = {'REGISTER', 'UNDO'}
 
-    connect_close: BoolProperty(
-        name="Connect & Close",
-        description="Join the two lines into a closed triangle: their ends on the circle "
-                    "are joined, and their ends at the point are merged",
+    external_loop: BoolProperty(
+        name="Create External Loop",
+        description="Instead of the lines, a closed loop: the two lines and the arc of the "
+                    "circle that faces away from the point",
+        default=False,
+    )
+    internal_loop: BoolProperty(
+        name="Create Internal Loop",
+        description="Instead of the lines, a closed loop: the two lines and the arc of the "
+                    "circle that faces the point",
         default=False,
     )
 
@@ -539,7 +660,8 @@ class ETR_OT_curve_toolkit_tangents_from_point(bpy.types.Operator):
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
-        layout.prop(self, "connect_close")
+        layout.prop(self, "external_loop")
+        layout.prop(self, "internal_loop")
 
     @classmethod
     def poll(cls, context):
@@ -583,7 +705,7 @@ class ETR_OT_curve_toolkit_tangents_from_point(bpy.types.Operator):
             if touch is None:
                 inside = True
                 continue
-            found.append((point, touch))
+            found.append((point, touch, circle))
         if not found:
             if inside:
                 raise Fail("the point is inside the circle (or on it): no line from it "
@@ -593,17 +715,21 @@ class ETR_OT_curve_toolkit_tangents_from_point(bpy.types.Operator):
         if len(found) > 1:
             raise Fail("both splines are circles and either point could be the one: select "
                        "more than one point of the circle")
-        point, touch = found[0]
+        point, touch, circle = found[0]
         target = context.active_object if context.active_object in objs else groups[0][0]
         to_local = world_matrix(target).inverted()
         for o in objs:
             _deselect_all(o.data)
-        local = [tuple(to_local @ Vector(p)) for p in (point, *touch)]
-        if self.connect_close:
-            spline = sd.write_spline(target.data, sd.SplineData(
-                'POLY', [sd.PointData(co=co, select=True) for co in local], True, {}))
-            self.report({'INFO'}, f"{FROM_POINT}: a closed triangle")
+        kinds = [k for k, on in ((True, self.external_loop), (False, self.internal_loop)) if on]
+        if kinds:
+            t0, t1 = touch
+            for external in kinds:
+                data = loop([line_cubic(point, t0)] + circle.arc(t0, t1, point, external)
+                            + [line_cubic(t1, point)])
+                spline = sd.write_spline(target.data, transformed(data, to_local))
+            self.report({'INFO'}, f"{FROM_POINT}: {len(kinds)} closed loop(s)")
         else:
+            local = [tuple(to_local @ Vector(p)) for p in (point, *touch)]
             for t in local[1:]:
                 spline = sd.write_spline(target.data, poly_segment(local[0], t))
             self.report({'INFO'}, f"{FROM_POINT}: 2 lines")

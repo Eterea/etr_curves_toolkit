@@ -115,8 +115,11 @@ def same_object_with_crossing():
     a = make("A", [circle(0, 0, 2), circle(7, 0, 1)])
     select_only(a)
     assert ops.curve_toolkit_tangents_2_circles(crossing=True) == {'FINISHED'}
-    assert len(a.data.splines) == 2 + 4
-    for p, q in world_splines(a)[2:]:
+    # v0.27.0: always into a new third object in Object Mode.
+    res = bpy.context.active_object
+    assert res is not a and len(a.data.splines) == 2
+    assert len(res.data.splines) == 4
+    for p, q in world_splines(res):
         assert on_circle(p, (0, 0, 0), 2) and on_circle(q, (7, 0, 0), 1)
 
 
@@ -126,7 +129,8 @@ def crossing_skipped_when_overlapping():
     a = make("A", [circle(0, 0, 2), circle(2.5, 0, 1)])
     select_only(a)
     ops.curve_toolkit_tangents_2_circles(crossing=True)
-    assert len(a.data.splines) == 2 + 2
+    assert len(a.data.splines) == 2
+    assert len(bpy.context.active_object.data.splines) == 2
 
 
 @test
@@ -142,43 +146,16 @@ def inside_is_refused():
 
 
 @test
-def connect_and_close():
-    # v0.26.0 (replaces Boolean All): the outer tangents make an isosceles
-    # trapezoid, the crossing ones two triangles that meet where they cross.
-    reset()
-    a = make("A", [circle(0, 0, 2)])
-    b = make("B", [circle(6, 0, 1)])
-    select_only(a, b)
-    assert ops.curve_toolkit_tangents_2_circles(crossing=True, connect_close=True) == {'FINISHED'}
-    res = bpy.context.active_object
-    assert res not in (a, b) and res.name == "Tangents"
-    assert not a.hide_get() and not b.hide_get()              # the circles stay in view
-    splines = list(res.data.splines)
-    assert [len(s.bezier_points) for s in splines] == [4, 3, 3]
-    assert all(s.use_cyclic_u for s in splines)
-    mw = res.matrix_world
-    trapezoid = [mw @ p.co for p in splines[0].bezier_points]
-    assert sum(on_circle(p, (0, 0, 0), 2) for p in trapezoid) == 2
-    assert sum(on_circle(p, (6, 0, 0), 1) for p in trapezoid) == 2
-    # Isosceles: its two legs (the tangents) are as long.
-    legs = [(trapezoid[1] - trapezoid[0]).length, (trapezoid[3] - trapezoid[2]).length]
-    assert abs(legs[0] - legs[1]) < TOL
-    cross = Vector((6 * 2 / 3, 0, 0))                       # divides 0-6 as 2 : 1
-    for spline, center, radius in ((splines[1], (0, 0, 0), 2), (splines[2], (6, 0, 0), 1)):
-        pts = [mw @ p.co for p in spline.bezier_points]
-        assert (pts[1] - cross).length < TOL
-        assert on_circle(pts[0], center, radius) and on_circle(pts[2], center, radius)
-    assert all(p.handle_left_type == 'VECTOR' for s in splines for p in s.bezier_points)
-
+def edit_mode_into_the_curve():
     # Edit Mode: into the curve being edited, the new splines selected.
     reset()
     a = make("A", [circle(0, 0, 2, select=True), circle(6, 0, 1, select=True)])
     select_only(a)
     bpy.ops.object.mode_set(mode='EDIT')
-    assert ops.curve_toolkit_tangents_2_circles(connect_close=True) == {'FINISHED'}
+    assert ops.curve_toolkit_tangents_2_circles() == {'FINISHED'}
     assert bpy.context.mode == 'EDIT_CURVE'
     bpy.ops.object.mode_set(mode='OBJECT')
-    assert len(a.data.splines) == 3 and a.data.splines[2].use_cyclic_u
+    assert len(a.data.splines) == 4
     assert all(p.select_control_point for p in a.data.splines[2].bezier_points)
     assert not any(p.select_control_point for p in a.data.splines[0].bezier_points)
 

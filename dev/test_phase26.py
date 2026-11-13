@@ -5,9 +5,10 @@
 Tests of the Phase 26 changes of Curve Toolkit (v0.26.0): Booleans & Splits
 in Edit Mode (Backup Splines in Edit Mode, Sources collection hidden in the
 viewport), Toggle Goal of the Difference, the new names of the results, Select
-All by Type without the stray points, 2D / 3D, Tangents from Point with
-Connect & Close and the Capable Arc of Circle from 3 Points. With Blender as a
-Python module:
+All by Type without the stray points, 2D / 3D and the Capable Arc of Circle
+from 3 Points (the tests of Connect & Close of the Tangents tools were
+replaced in v0.27.0 by those of test_phase27.py). With Blender as a Python
+module:
 
     python test_phase26.py <folder that contains the etr_curves_toolkit package>
 """
@@ -424,50 +425,9 @@ def symmetrize_overlapping_splines_around_their_origin():
         bpy.data.objects.remove(o)
 
 
-@test
-def tangents_shapes_take_booleans():
-    # The closed shapes of Tangents to 2 Circles share points with the
-    # circles: they must still take every Boolean with them.
-    reset()
-    for loc, r in (((0, 0, 0), 2), ((6, 1, 0), 1)):
-        bpy.ops.curve.primitive_bezier_circle_add(radius=r, location=loc)
-    a, b = sorted(bpy.context.scene.objects, key=lambda o: o.location.x)
-    for o in bpy.context.scene.objects:
-        o.select_set(True)
-    assert ops.curve_toolkit_tangents_2_circles(connect_close=True, crossing=True) == {'FINISHED'}
-    t = bpy.context.active_object
-    for o in bpy.context.scene.objects:
-        o.select_set(o is t)
-    bpy.ops.object.mode_set(mode='EDIT')
-    ops.curve_toolkit_separate()
-    object_mode()
-    shapes = sorted((o for o in bpy.context.scene.objects if o.name.startswith("Tangents")),
-                    key=lambda o: len(o.data.splines[0].bezier_points), reverse=True)
-    trapezoid, tri_1, tri_2 = shapes[0], *sorted(shapes[1:], key=lambda o: o.matrix_world.translation.x
-                                                  + sum(p.co.x for p in o.data.splines[0].bezier_points))
-    for pair in ((a, trapezoid), (b, trapezoid), (a, tri_1), (b, tri_2)):
-        for op in (ops.curve_toolkit_boolean_union, ops.curve_toolkit_boolean_intersection,
-                   ops.curve_toolkit_boolean_difference):
-            for o in bpy.context.scene.objects:
-                o.hide_set(False)
-                o.select_set(o in pair)
-            bpy.context.view_layer.objects.active = pair[1]
-            n = len(bpy.data.objects)
-            assert op() == {'FINISHED'}, (pair, op)
-            assert len(bpy.data.objects) == n + 1, (pair, op)
-    # All three at once, too.
-    for o in bpy.context.scene.objects:
-        o.hide_set(False)
-        o.select_set(o in (a, b, trapezoid))
-    bpy.context.view_layer.objects.active = trapezoid
-    assert ops.curve_toolkit_boolean_union() == {'FINISHED'}
-    assert len(bpy.context.active_object.data.splines) == 1
-
-
 # -----------------------------------------------------------------------------
 # Utilities
 # -----------------------------------------------------------------------------
-
 @test
 def select_by_type_leaves_the_strays_out():
     reset()
@@ -517,43 +477,6 @@ def unique_names_use_an_underscore():
 # -----------------------------------------------------------------------------
 # Create Curves
 # -----------------------------------------------------------------------------
-
-@test
-def tangents_from_point_connect_and_close():
-    reset()
-    k = 0.5522847498
-    circle = []
-    for a in range(4):
-        t = a * math.pi / 2
-        c = (math.cos(t), math.sin(t))
-        tg = (-math.sin(t) * k, math.cos(t) * k)
-        circle.append((c, tg))
-    data = bpy.data.curves.new("C", 'CURVE')
-    s = data.splines.new('BEZIER')
-    s.bezier_points.add(3)
-    for bp, (c, tg) in zip(s.bezier_points, circle):
-        bp.handle_left_type = bp.handle_right_type = 'FREE'
-        bp.co = (*c, 0)
-        bp.handle_left = (c[0] - tg[0], c[1] - tg[1], 0)
-        bp.handle_right = (c[0] + tg[0], c[1] + tg[1], 0)
-        bp.select_control_point = True
-    s.use_cyclic_u = True
-    p = data.splines.new('POLY')
-    p.points[0].co = (3, 0, 0, 1)
-    p.points[0].select = True
-    obj = bpy.data.objects.new("C", data)
-    bpy.context.scene.collection.objects.link(obj)
-    obj.select_set(True)
-    edit(obj)
-    assert ops.curve_toolkit_tangents_from_point(connect_close=True) == {'FINISHED'}
-    object_mode()
-    tri = obj.data.splines[-1]
-    assert len(obj.data.splines) == 3 and tri.type == 'POLY' and tri.use_cyclic_u
-    pts = [q.co.xyz for q in tri.points]
-    assert close(pts[0], (3, 0, 0))
-    for q in pts[1:]:
-        assert abs(q.length - 1) < 1e-3 and abs(q.dot(q - Vector((3, 0, 0)))) < 1e-3
-
 
 @test
 def capable_arc():

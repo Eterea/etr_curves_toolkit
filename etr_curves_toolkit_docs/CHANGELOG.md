@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.27.0
+
+- **Tangents to 2 Circles**: *Add Crossing Tangents* and *Connect & Close*
+  (the isosceles trapezoid and the two triangles) are replaced by four
+  options (F9):
+  - **Main Tangents** (on by default): the two outer tangents.
+  - **Crossing Tangents** (off by default): the two inner tangents.
+  - **Create External Loop(s)** (off by default): instead of the lines, a
+    closed loop for each kind of tangents that is on, made of the tangents and
+    the arcs of the circles that face away from the other circle (the belt;
+    a figure of eight with the crossing tangents, with no point where they
+    cross).
+  - **Create Internal Loop(s)** (off by default): the same with the arcs that
+    face the other circle.
+  The arcs are cut from the circles themselves, so the loops lie exactly on
+  them. In **Object Mode** the new geometry now always goes to a new third
+  object (also when both circles are splines of one object), selected and
+  active; the circles are only deselected.
+- **Tangents from Point**: *Connect & Close* (the triangle) is replaced by
+  **Create External Loop** and **Create Internal Loop** (F9, off by default):
+  closed Bezier loops made of the two lines and the arc of the circle that
+  faces away from the point or the one that faces it.
+- **Extend**: the *Curvature* angle no longer has soft limits at -180 and
+  +180 degrees: it can be dragged up to the hard limits of -360 and +360
+  (a wider turn would only wind the arc over itself).
+
 ## v0.26.0
 
 - **Booleans & Splits** (formerly *Curve Booleans*) now work in **Object
